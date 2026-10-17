@@ -1,0 +1,107 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isMapOwner(mapData) {
+      return isAuthenticated() && request.auth.uid == mapData.ownerId;
+    }
+
+    function isMapCollaborator(mapData, role) {
+      return isAuthenticated() && 
+        mapData.collaborators != null && 
+        mapData.collaborators[request.auth.uid] == role;
+    }
+
+    function canReadMap(mapData) {
+      return mapData.isPublic == true || 
+             isMapOwner(mapData) || 
+             isMapCollaborator(mapData, 'viewer') || 
+             isMapCollaborator(mapData, 'editor');
+    }
+
+    function canEditMap(mapData) {
+      return isMapOwner(mapData) || isMapCollaborator(mapData, 'editor');
+    }
+
+    // User profile collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && request.resource.data.email == request.auth.token.email;
+      allow update: if isOwner(userId);
+      allow delete: if false; // prevent accidental account wipe via raw client
+    }
+
+    // Mind Maps collection
+    match /mindMaps/{mapId} {
+      allow read: if canReadMap(resource.data);
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        canEditMap(resource.data) &&
+        request.resource.data.ownerId == resource.data.ownerId // Prevent changing owner
+      );
+      allow delete: if isAuthenticated() && isMapOwner(resource.data);
+
+      // Subcollection: Nodes
+      match /nodes/{nodeId} {
+        allow read: if canReadMap(get(/databases/$(database)/documents/mindMaps/$(mapId)).data);
+        allow write: if canEditMap(get(/databases/$(database)/documents/mindMaps/$(mapId)).data);
+      }
+
+      // Subcollection: Edges
+      match /edges/{edgeId} {
+        allow read: if canReadMap(get(/databases/$(database)/documents/mindMaps/$(mapId)).data);
+        allow write: if canEditMap(get(/databases/$(database)/documents/mindMaps/$(mapId)).data);
+      }
+    }
+
+    // Standalone / Shared maps collection for direct share links
+    match /sharedMaps/{shareId} {
+      allow read: if true; // Access controlled by share link token or public flag
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.createdBy;
+    }
+
+    // Flashcards collection
+    match /flashcards/{cardId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Study Sessions and Spaced Repetition Logs
+    match /studySessions/{sessionId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    match /reviewEvents/{eventId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false; // Immutable review log
+    }
+
+    // Documents & Attachments metadata
+    match /documents/{docId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
