@@ -5,6 +5,7 @@ import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { AppShell } from '@/components/layout/AppShell';
 import { DashboardPage } from '@/features/dashboard/DashboardPage';
 import { HamoMapEditor } from '@/features/editor/HamoMapEditor';
+import { WhiteboardStudio } from '@/features/whiteboard/WhiteboardStudio';
 import { SUBJECT_TEMPLATES } from '@/features/templates/subjectTemplates';
 import { useMapStore } from '@/stores/useMapStore';
 import { aiClient } from '@/services/ai/aiClient';
@@ -469,6 +470,16 @@ export const App: React.FC = () => {
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
+
+        {/* Dedicated Full-Screen Whiteboard & Self-Explanation Studio */}
+        <Route
+          path="/whiteboard"
+          element={
+            <ProtectedRoute>
+              <WhiteboardStudio />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Dedicated Full-Screen Mind-Map Editor */}
         <Route

@@ -49,6 +49,7 @@ import {
   ArrowLeft,
   Presentation,
   MapPin,
+  PenTool,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -412,6 +413,16 @@ const EditorCanvas: React.FC = () => {
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span>Learning Center</span>
+          </button>
+
+          {/* Whiteboard Studio Button */}
+          <button
+            onClick={() => navigate(`/whiteboard?topic=${encodeURIComponent(currentMap?.title || '')}`)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-xl text-xs font-semibold transition-all"
+            title="سبورة الشرح والتفسير الذاتي بالقلم والأشكال"
+          >
+            <PenTool className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">سبورة الشرح</span>
           </button>
         </div>
 

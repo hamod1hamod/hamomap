@@ -16,6 +16,7 @@ import {
   LogOut,
   User,
   Plus,
+  PenTool,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -29,6 +30,7 @@ export const AppShell: React.FC = () => {
   const navLinks = [
     { to: '/dashboard', label: isRtl ? 'لوحة التحكم' : 'Dashboard', icon: LayoutDashboard },
     { to: '/maps', label: isRtl ? 'خرائط المعرفة' : 'Mind Maps', icon: Map },
+    { to: '/whiteboard', label: isRtl ? 'سبورة الشرح الذاتي' : 'Explain Studio', icon: PenTool },
     { to: '/review', label: isRtl ? 'طابور التكرار' : 'Review Queue', icon: RotateCcw },
     { to: '/templates', label: isRtl ? 'القوالب الدراسية' : 'Templates', icon: BookTemplate },
     { to: '/analytics', label: isRtl ? 'التحليلات' : 'Analytics', icon: BarChart3 },

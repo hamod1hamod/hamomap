@@ -24,6 +24,7 @@ import {
   GraduationCap,
   FileText,
   Filter,
+  PenTool,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -147,6 +148,13 @@ export const DashboardPage: React.FC = () => {
             >
               <Plus className="w-4 h-4" />
               <span>Create New Mind Map</span>
+            </button>
+            <button
+              onClick={() => navigate('/whiteboard')}
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl font-bold text-xs shadow-lg transition-all hover:scale-[1.02]"
+            >
+              <PenTool className="w-4 h-4" />
+              <span>سبورة الشرح والتفسير بالقلم</span>
             </button>
             <button
               onClick={() => setIsDocModalOpen(true)}
