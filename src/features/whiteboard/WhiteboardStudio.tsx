@@ -409,37 +409,50 @@ export const WhiteboardStudio: React.FC = () => {
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert('متصفحك لا يدعم التعرف على الصوت المباشر (Web Speech API). يرجى استخدام متصفح Chrome أو Edge.');
+      // In case the browser does not support Web Speech API, open the voice dialog with manual input fallback
+      setVoiceStatus('متصفحك لا يدعم Web Speech API تلقائياً. يمكنك كتابة النص مباشرة بالأسفل لإدراجه كشكل.');
+      setIsListening(false);
       return;
     }
 
     try {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {}
+      }
+
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      // Auto-detect or support both Arabic and English
-      recognition.lang = document.documentElement.getAttribute('dir') === 'rtl' ? 'ar-SA' : 'ar-EG';
+      // Try Arabic first if document is RTL or user prefers Arabic, else fallback to English/system
+      const isRtl = document.documentElement.getAttribute('dir') === 'rtl';
+      recognition.lang = isRtl ? 'ar-SA' : 'en-US';
 
       recognition.onstart = () => {
         setIsListening(true);
-        setVoiceTranscript('');
-        setVoiceStatus('جاري الاستماع لصوتك... تكلم بوضوح');
+        setVoiceStatus('جاري الاستماع لصوتك... تكلم بحرية وبوضوح');
       };
 
       recognition.onresult = (event: any) => {
-        let currentTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          currentTranscript += event.results[i][0].transcript;
+        let fullTranscript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          fullTranscript += event.results[i][0].transcript + ' ';
         }
-        setVoiceTranscript(currentTranscript);
+        setVoiceTranscript(fullTranscript.trim());
+        setVoiceStatus('تم التقاط الصوت! اضغط "إدراج في السبورة" عند الانتهاء.');
       };
 
       recognition.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
         if (event.error === 'not-allowed') {
-          setVoiceStatus('يرجى السماح بالوصول إلى الميكروفون');
+          setVoiceStatus('يرجى السماح بصلاحية الميكروفون في المتصفح');
+        } else if (event.error === 'network') {
+          setVoiceStatus('خطأ شبكة في محرك التعرف الصوتي، يمكنك أيضاً كتابة النص يدوياً');
+        } else if (event.error === 'no-speech') {
+          setVoiceStatus('لم يتم رصد صوت، حاول التحدث بصوت أعلى أو قرب الميكروفون');
         } else {
-          setVoiceStatus(`تنبيه: ${event.error}`);
+          setVoiceStatus(`تنبيه: ${event.error} (يمكنك تعديل النص يدوياً أدناه)`);
         }
         setIsListening(false);
       };
@@ -452,13 +465,16 @@ export const WhiteboardStudio: React.FC = () => {
       recognition.start();
     } catch (err: any) {
       console.error(err);
-      setVoiceStatus('فشل بدء التسجيل الصوتي');
+      setVoiceStatus('حدث استثناء أثناء تشغيل الميكروفون: ' + (err.message || 'يرجى مراجعة الصلاحيات'));
+      setIsListening(false);
     }
   };
 
   const stopVoiceRecording = () => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {}
       recognitionRef.current = null;
     }
     setIsListening(false);
@@ -1697,15 +1713,15 @@ ${fullNotes}
               </button>
             </div>
 
-            {/* Transcript Preview */}
-            <div className="min-h-16 max-h-32 overflow-y-auto p-2.5 bg-muted/50 rounded-xl border border-border/60 text-xs text-foreground leading-relaxed">
-              {voiceTranscript ? (
-                <p>{voiceTranscript}</p>
-              ) : (
-                <p className="text-muted-foreground italic">
-                  تحدث الآن واشرح فكرتك... (مثال: "ما هي شروط التوازن الكيميائي؟ الإجابة: ثبات التراكيز وتساوي سرعة التفاعلين")
-                </p>
-              )}
+            {/* Transcript Preview & Editable Input */}
+            <div className="space-y-1.5">
+              <textarea
+                rows={3}
+                value={voiceTranscript}
+                onChange={(e) => setVoiceTranscript(e.target.value)}
+                placeholder="تحدث الآن أو اكتب هنا مباشرة (مثال: ما هي شروط التوازن الكيميائي؟)..."
+                className="w-full p-2.5 bg-muted/60 rounded-xl border border-border/80 text-xs text-foreground leading-relaxed focus:outline-none focus:border-primary resize-none"
+              />
             </div>
 
             {/* Action Bar */}
