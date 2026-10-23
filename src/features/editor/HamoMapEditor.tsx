@@ -339,6 +339,25 @@ const EditorCanvas: React.FC = () => {
               <div className="absolute top-full mt-2 left-0 w-48 bg-card border border-border rounded-2xl shadow-xl p-1.5 space-y-1 z-50">
                 <button
                   onClick={() => {
+                    setLayoutStyle('gradient-border', 'TB');
+                    setLayoutDropdownOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-xs rounded-xl hover:bg-muted font-bold text-primary flex items-center justify-between"
+                >
+                  <span>Dual Gradient Border (Blue-to-Red)</span>
+                  <span className="text-[10px] px-1 bg-primary/10 rounded">New</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setLayoutStyle('tree', 'TB');
+                    setLayoutDropdownOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-xs rounded-xl hover:bg-muted"
+                >
+                  Tree (Top-Down Diagram)
+                </button>
+                <button
+                  onClick={() => {
                     setLayoutStyle('traditional', 'LR');
                     setLayoutDropdownOpen(false);
                   }}
@@ -354,15 +373,6 @@ const EditorCanvas: React.FC = () => {
                   className="w-full text-left px-3 py-1.5 text-xs rounded-xl hover:bg-muted"
                 >
                   Radial Concentric
-                </button>
-                <button
-                  onClick={() => {
-                    setLayoutStyle('tree', 'TB');
-                    setLayoutDropdownOpen(false);
-                  }}
-                  className="w-full text-left px-3 py-1.5 text-xs rounded-xl hover:bg-muted"
-                >
-                  Tree (Top-Down)
                 </button>
                 <button
                   onClick={() => {

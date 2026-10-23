@@ -32,21 +32,52 @@ export const MindForgeCustomNode = memo(({ id, data, selected }: NodeProps) => {
     expert: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
   };
 
+  const shape = nodeData.shape || 'rounded';
+  const isGradientBorder = shape === 'gradient-border';
+  const isPill = shape === 'pill';
+  const isDiamond = shape === 'diamond';
+  const isHexagon = shape === 'hexagon';
+  const isSplitGradient = shape === 'split-gradient';
+  const isMinimalFlat = shape === 'minimal-flat';
+
   return (
     <div
       className={clsx(
-        'group relative min-w-[200px] max-w-[340px] rounded-2xl transition-all duration-200',
-        'border shadow-md backdrop-blur-md',
+        'group relative min-w-[190px] max-w-[340px] transition-all duration-200 select-none',
+        // Shape Geometries
+        isPill && 'rounded-full px-6 py-3',
+        isDiamond && 'rounded-2xl rotate-0 border-dashed p-4 text-center',
+        isHexagon && 'rounded-3xl border-2 p-4',
+        shape === 'rectangle' && 'rounded-none p-4',
+        shape === 'rounded' && 'rounded-2xl p-4',
+        // User Image Style: Clean White card with crisp Red-to-Blue Dual Gradient Border
+        isGradientBorder &&
+          'rounded-md bg-card text-foreground p-4 shadow-sm border-2 border-transparent [background:linear-gradient(hsl(var(--card)),hsl(var(--card)))_padding-box,linear-gradient(to_right,#2563eb,#e11d48)_border-box]',
+        // Split Gradient
+        isSplitGradient &&
+          'rounded-lg bg-card text-foreground p-4 shadow-sm border-l-4 border-l-blue-600 border-r-4 border-r-rose-600 border-y border-border',
+        // Minimal Flat
+        isMinimalFlat &&
+          'rounded-md bg-card text-foreground p-3 border-2 border-primary/80 shadow-none',
+        // Default Card
+        !isGradientBorder &&
+          !isSplitGradient &&
+          !isMinimalFlat &&
+          (isRoot
+            ? 'bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 text-white border border-indigo-500/50 p-5 shadow-indigo-500/20'
+            : 'bg-card text-card-foreground border border-border/80 shadow-md backdrop-blur-md'),
+        // Selection State
         selected
           ? 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-xl scale-[1.02]'
-          : 'hover:shadow-lg hover:border-primary/40',
-        isRoot
-          ? 'bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 text-white border-indigo-500/50 p-5 shadow-indigo-500/20'
-          : 'bg-card text-card-foreground border-border/80 p-4'
+          : 'hover:shadow-lg hover:border-primary/40'
       )}
       style={{
-        backgroundColor: !isRoot && nodeData.color ? `${nodeData.color}15` : undefined,
-        borderColor: !isRoot && nodeData.borderColor ? nodeData.borderColor : undefined,
+        backgroundColor:
+          !isRoot && !isGradientBorder && nodeData.color ? `${nodeData.color}15` : undefined,
+        borderColor:
+          !isRoot && !isGradientBorder && !isSplitGradient && nodeData.borderColor
+            ? nodeData.borderColor
+            : undefined,
       }}
     >
       {/* 4 Multi-directional Connection Handles */}

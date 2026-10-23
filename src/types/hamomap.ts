@@ -7,11 +7,24 @@ export type MindMapStyle =
   | 'cornell'
   | 'timeline'
   | 'flashcard'
-  | 'exam';
+  | 'exam'
+  | 'gradient-border'
+  | 'neon-minimal'
+  | 'pill-modern'
+  | 'contrast-box';
 
 export type LayoutDirection = 'TB' | 'BT' | 'LR' | 'RL' | 'radial' | 'manual';
 
-export type NodeShape = 'rounded' | 'rectangle' | 'pill' | 'diamond' | 'card' | 'hexagon';
+export type NodeShape =
+  | 'rounded'
+  | 'rectangle'
+  | 'pill'
+  | 'diamond'
+  | 'card'
+  | 'hexagon'
+  | 'gradient-border'
+  | 'minimal-flat'
+  | 'split-gradient';
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard' | 'expert';
 export type PriorityLevel = 'low' | 'medium' | 'high' | 'urgent';

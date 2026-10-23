@@ -440,17 +440,21 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({ onClose }) => {
 
             <div>
               <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
-                Shape
+                Shape & Geometry Style
               </label>
               <select
                 value={nodeData.shape || 'rounded'}
                 onChange={(e) => updateNodeData(selectedNode.id, { shape: e.target.value as any })}
                 className="w-full px-3 py-1.5 text-xs bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="rounded">Rounded Card</option>
+                <option value="gradient-border">✨ Dual Gradient Border (Blue-to-Red)</option>
+                <option value="split-gradient">Split Border (Blue & Rose Accents)</option>
+                <option value="minimal-flat">Clean Minimal Outline</option>
+                <option value="rounded">Rounded Studio Card</option>
                 <option value="pill">Pill Capsule</option>
                 <option value="rectangle">Square Box</option>
                 <option value="diamond">Diamond (Decision)</option>
+                <option value="hexagon">Hexagon Module</option>
               </select>
             </div>
           </div>

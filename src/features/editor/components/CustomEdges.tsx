@@ -2,6 +2,8 @@ import React, { memo } from 'react';
 import {
   EdgeProps,
   getBezierPath,
+  getSmoothStepPath,
+  getStraightPath,
   EdgeLabelRenderer,
   BaseEdge,
 } from '@xyflow/react';
@@ -23,28 +25,58 @@ export const MindForgeCustomEdge = memo(
     data,
     selected,
   }: EdgeProps) => {
-    const [edgePath, labelX, labelY] = getBezierPath({
-      sourceX,
-      sourceY,
-      sourcePosition,
-      targetX,
-      targetY,
-      targetPosition,
-    });
+    const currentMap = useMapStore((s) => s.currentMap);
+    const edgeData = data as EdgeData | undefined;
+    const styleType = edgeData?.styleType || (currentMap?.style === 'gradient-border' ? 'smoothstep' : 'bezier');
+
+    let edgePath = '';
+    let labelX = 0;
+    let labelY = 0;
+
+    if (styleType === 'smoothstep') {
+      [edgePath, labelX, labelY] = getSmoothStepPath({
+        sourceX,
+        sourceY,
+        sourcePosition,
+        targetX,
+        targetY,
+        targetPosition,
+        borderRadius: 12,
+      });
+    } else if (styleType === 'straight') {
+      [edgePath, labelX, labelY] = getStraightPath({
+        sourceX,
+        sourceY,
+        targetX,
+        targetY,
+      });
+    } else {
+      [edgePath, labelX, labelY] = getBezierPath({
+        sourceX,
+        sourceY,
+        sourcePosition,
+        targetX,
+        targetY,
+        targetPosition,
+      });
+    }
 
     const deleteEdge = useMapStore((s) => s.deleteEdge);
-    const edgeData = data as EdgeData | undefined;
     const label = edgeData?.label;
 
     return (
       <>
         <BaseEdge
           path={edgePath}
-          markerEnd={markerEnd}
+          markerEnd={markerEnd || 'url(#arrow-head)'}
           style={{
             ...style,
-            stroke: selected ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground) / 0.4)',
-            strokeWidth: selected ? 2.5 : 1.5,
+            stroke: selected
+              ? 'hsl(var(--primary))'
+              : currentMap?.style === 'gradient-border'
+              ? '#1e293b'
+              : 'hsl(var(--muted-foreground) / 0.45)',
+            strokeWidth: selected ? 2.5 : currentMap?.style === 'gradient-border' ? 2 : 1.5,
             transition: 'stroke 0.2s, stroke-width 0.2s',
           }}
         />

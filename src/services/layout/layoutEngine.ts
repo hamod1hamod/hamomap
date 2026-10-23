@@ -70,6 +70,18 @@ export function applyMindMapLayout(
     case 'flowchart':
       return applyFlowchartLayout(nodeMap, childrenMap, rootId, nodeWidth, nodeHeight);
 
+    case 'gradient-border':
+      return applyHierarchicalTreeLayout(
+        nodeMap,
+        childrenMap,
+        rootId,
+        'TB',
+        nodeWidth,
+        nodeHeight,
+        horizontalSpacing + 40,
+        verticalSpacing + 40
+      );
+
     case 'tree':
     case 'traditional':
     case 'concept':

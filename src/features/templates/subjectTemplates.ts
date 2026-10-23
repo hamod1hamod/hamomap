@@ -2,6 +2,64 @@ import { SubjectTemplate } from '@/types/hamomap';
 
 export const SUBJECT_TEMPLATES: SubjectTemplate[] = [
   {
+    id: 'tpl-supervised-learning',
+    title: 'Supervised Learning Architecture (Dual Gradient)',
+    category: 'Artificial Intelligence',
+    description: 'Exact architectural tree diagram with dual blue-to-red gradient borders, structured top-down branches, and direct feedback loops.',
+    icon: 'Brain',
+    style: 'gradient-border',
+    tags: ['Machine Learning', 'AI', 'Supervised Learning', 'Dual Gradient'],
+    sampleNodes: [
+      {
+        id: 'sl-root',
+        data: {
+          label: 'Supervised Learning',
+          description: 'Machine learning paradigm where models map input features to labeled targets.',
+          isRoot: true,
+          shape: 'gradient-border',
+          category: 'Core AI',
+          difficulty: 'medium',
+        },
+      },
+      {
+        id: 'sl-child-1',
+        parentId: 'sl-root',
+        data: {
+          label: 'Labeled data',
+          description: 'Training examples consisting of paired inputs and desired ground-truth output labels.',
+          shape: 'gradient-border',
+          category: 'Dataset',
+          difficulty: 'easy',
+          isFlashcard: true,
+          flashcardQuestion: 'What constitutes labeled data in supervised learning?',
+          flashcardAnswer: 'Data consisting of input features paired with human or ground-truth output targets.',
+        },
+      },
+      {
+        id: 'sl-child-2',
+        parentId: 'sl-root',
+        data: {
+          label: 'Direct feedback',
+          description: 'Loss function calculates explicit prediction error to adjust network weights via backpropagation.',
+          shape: 'gradient-border',
+          category: 'Optimization',
+          difficulty: 'medium',
+        },
+      },
+      {
+        id: 'sl-child-3',
+        parentId: 'sl-root',
+        data: {
+          label: 'Predict outcome/future',
+          description: 'Generalization to unseen inference data to forecast continuous values or discrete categories.',
+          shape: 'gradient-border',
+          category: 'Inference',
+          difficulty: 'medium',
+        },
+      },
+    ],
+  },
+  {
     id: 'tpl-networking',
     title: 'Computer Networking & Architecture',
     category: 'Computer Science',
