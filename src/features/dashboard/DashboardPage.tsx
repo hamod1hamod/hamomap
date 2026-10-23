@@ -125,101 +125,133 @@ export const DashboardPage: React.FC = () => {
   ).length;
 
   return (
-    <div className="flex-1 bg-background text-foreground p-6 sm:p-8 max-w-7xl mx-auto w-full space-y-8 animate-in fade-in duration-150">
-      {/* Welcome Banner */}
-      <section className="relative overflow-hidden rounded-3xl p-8 bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 text-white shadow-2xl border border-indigo-700/50">
-        <div className="relative z-10 max-w-2xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>AI-Powered Cognitive Knowledge Architecture</span>
+    <div className="flex-1 bg-background text-foreground p-6 sm:p-10 max-w-7xl mx-auto w-full space-y-8 animate-in fade-in duration-150">
+      {/* Studio Header & Action Zone (Asymmetric Split) */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        <div className="lg:col-span-8 p-7 bg-card border border-border rounded-2xl shadow-sm flex flex-col justify-between space-y-4">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-muted border border-border text-[11px] font-mono text-muted-foreground">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+              <span>COGNITIVE WORKSPACE</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              Welcome, {profile?.displayName || 'Scholar'}
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-xl leading-relaxed">
+              Curate and expand your cognitive graph. Nodes reviewable under SM-2 spaced repetition appear automatically in the retention queue.
+            </p>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Welcome back, {profile?.displayName || 'Scholar'}
-          </h1>
-          <p className="text-sm text-indigo-100/90 leading-relaxed">
-            Transform any complex subject into structured visual knowledge. Retain concepts effortlessly with
-            active recall and spaced repetition.
-          </p>
 
-          <div className="flex flex-wrap gap-3 pt-2">
+          <div className="flex flex-wrap items-center gap-2.5 pt-2">
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-white text-indigo-900 rounded-xl font-bold text-xs shadow-lg hover:bg-indigo-50 transition-all hover:scale-[1.02]"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-semibold text-xs shadow-sm hover:bg-primary/95 transition-all"
             >
-              <Plus className="w-4 h-4" />
-              <span>Create New Mind Map</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>New Graph Map</span>
             </button>
             <button
               onClick={() => navigate('/whiteboard')}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl font-bold text-xs shadow-lg transition-all hover:scale-[1.02]"
+              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-muted border border-border rounded-xl font-semibold text-xs text-foreground transition-all"
             >
-              <PenTool className="w-4 h-4" />
-              <span>سبورة الشرح والتفسير بالقلم</span>
+              <PenTool className="w-3.5 h-3.5 text-amber-500" />
+              <span>سبورة الشرح والتفسير</span>
             </button>
             <button
               onClick={() => setIsDocModalOpen(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-700/60 hover:bg-indigo-700 text-white border border-indigo-400/30 rounded-xl font-semibold text-xs transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-muted border border-border rounded-xl font-medium text-xs text-muted-foreground hover:text-foreground transition-all"
             >
-              <Upload className="w-4 h-4" />
-              <span>Document-to-Map</span>
+              <Upload className="w-3.5 h-3.5" />
+              <span>Extract from Document</span>
             </button>
           </div>
         </div>
+
+        {/* Studio Active Status Panel */}
+        <div className="lg:col-span-4 p-6 bg-muted/40 border border-border rounded-2xl flex flex-col justify-between space-y-4">
+          <div className="flex items-center justify-between border-b border-border/80 pb-3">
+            <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider">
+              Retention Health
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-muted border border-border text-foreground">
+              {profile?.streakDays || 5} Day Streak
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs text-muted-foreground font-mono">DUE REVIEWS</span>
+              <span className="text-xl font-mono font-bold text-foreground">{dueCardsCount}</span>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs text-muted-foreground font-mono">TOTAL MAPS</span>
+              <span className="text-xl font-mono font-bold text-foreground">{maps.length}</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => navigate('/review')}
+            className="w-full py-2 bg-card hover:bg-muted border border-border rounded-xl text-xs font-semibold text-foreground transition-colors flex items-center justify-center gap-2"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-primary" />
+            <span>Open Review Queue</span>
+          </button>
+        </div>
       </section>
 
-      {/* Metrics Row */}
+      {/* Metrics Row - Refined Studio Cards */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-5 bg-card border border-border rounded-2xl shadow-sm flex items-center justify-between">
+        <div className="p-4 bg-card border border-border rounded-xl shadow-none flex items-center justify-between">
           <div>
-            <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">
+            <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider block">
               Active Streak
             </span>
-            <span className="text-2xl font-black text-foreground mt-1 block">
+            <span className="text-xl font-mono font-bold text-foreground mt-0.5 block">
               {profile?.streakDays || 5} Days
             </span>
           </div>
-          <span className="p-3 rounded-2xl bg-amber-500/10 text-amber-500">
-            <Flame className="w-6 h-6 fill-current" />
+          <span className="p-2 rounded-lg bg-muted text-amber-600 dark:text-amber-400">
+            <Flame className="w-4 h-4 fill-current" />
           </span>
         </div>
 
-        <div className="p-5 bg-card border border-border rounded-2xl shadow-sm flex items-center justify-between">
+        <div className="p-4 bg-card border border-border rounded-xl shadow-none flex items-center justify-between">
           <div>
-            <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">
+            <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider block">
               Due For Review
             </span>
-            <span className="text-2xl font-black text-foreground mt-1 block">
-              {dueCardsCount > 0 ? dueCardsCount : 4} Cards
+            <span className="text-xl font-mono font-bold text-foreground mt-0.5 block">
+              {dueCardsCount} Cards
             </span>
           </div>
-          <span className="p-3 rounded-2xl bg-sky-500/10 text-sky-500">
-            <RotateCcw className="w-6 h-6" />
+          <span className="p-2 rounded-lg bg-muted text-primary">
+            <RotateCcw className="w-4 h-4" />
           </span>
         </div>
 
-        <div className="p-5 bg-card border border-border rounded-2xl shadow-sm flex items-center justify-between">
+        <div className="p-4 bg-card border border-border rounded-xl shadow-none flex items-center justify-between">
           <div>
-            <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">
-              Total Knowledge Maps
+            <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider block">
+              Knowledge Maps
             </span>
-            <span className="text-2xl font-black text-foreground mt-1 block">{maps.length}</span>
+            <span className="text-xl font-mono font-bold text-foreground mt-0.5 block">{maps.length}</span>
           </div>
-          <span className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-500">
-            <Layers className="w-6 h-6" />
+          <span className="p-2 rounded-lg bg-muted text-foreground">
+            <Layers className="w-4 h-4" />
           </span>
         </div>
 
-        <div className="p-5 bg-card border border-border rounded-2xl shadow-sm flex items-center justify-between">
+        <div className="p-4 bg-card border border-border rounded-xl shadow-none flex items-center justify-between">
           <div>
-            <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">
-              Retention Rate
+            <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider block">
+              Recall Health
             </span>
-            <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1 block">
-              88%
+            <span className="text-xl font-mono font-bold text-foreground mt-0.5 block">
+              SM-2
             </span>
           </div>
-          <span className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500">
-            <GraduationCap className="w-6 h-6" />
+          <span className="p-2 rounded-lg bg-muted text-foreground">
+            <GraduationCap className="w-4 h-4" />
           </span>
         </div>
       </section>

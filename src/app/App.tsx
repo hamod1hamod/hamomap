@@ -32,91 +32,120 @@ import clsx from 'clsx';
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
-      <header className="h-20 border-b border-border/80 px-6 sm:px-12 flex items-center justify-between backdrop-blur-md bg-card/60 sticky top-0 z-40">
+    <div className="min-h-[100dvh] bg-background text-foreground flex flex-col font-sans selection:bg-primary/20 selection:text-primary">
+      {/* Studio Header */}
+      <header className="h-16 border-b border-border/70 px-6 sm:px-12 flex items-center justify-between backdrop-blur-md bg-card/70 sticky top-0 z-40">
         <div className="flex items-center gap-3">
-          <span className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-            <Brain className="w-5 h-5" />
+          <span className="w-8 h-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold shadow-sm">
+            <Brain className="w-4 h-4" />
           </span>
-          <span className="font-extrabold text-xl tracking-tight">MindForge AI</span>
+          <span className="font-bold text-base tracking-tight text-foreground">MindForge AI</span>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/login')}
-            className="px-4 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            className="px-3.5 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
           >
             Sign In
           </button>
           <button
             onClick={() => navigate('/dashboard')}
-            className="px-5 py-2.5 bg-primary text-primary-foreground rounded-2xl text-xs font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all hover:scale-[1.02]"
+            className="px-4 py-1.5 bg-primary text-primary-foreground rounded-xl text-xs font-semibold shadow-sm hover:bg-primary/90 transition-all"
           >
             Launch Platform
           </button>
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto px-6 py-20 flex flex-col items-center text-center space-y-12">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-semibold animate-in fade-in">
-          <Sparkles className="w-4 h-4" />
-          <span>The Complete AI-Powered Mind Mapping & Spaced Learning System</span>
-        </div>
-
-        <h1 className="text-4xl sm:text-6xl font-black tracking-tight max-w-4xl leading-tight">
-          Turn any information into an organized <span className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">visual knowledge system</span>
-        </h1>
-
-        <p className="text-base sm:text-lg text-muted-foreground max-w-2xl leading-relaxed">
-          Create professional mind maps, active recall flashcards, and spaced-repetition schedules. Understand
-          deeply, remember longer, and master complex subjects effortlessly.
-        </p>
-
-        <div className="flex flex-wrap justify-center gap-4 pt-4">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2.5 px-8 py-4 bg-primary text-primary-foreground rounded-2xl text-sm font-bold shadow-xl shadow-primary/25 hover:bg-primary/90 transition-all hover:scale-105"
-          >
-            <span>Get Started Free</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => navigate('/templates')}
-            className="flex items-center gap-2 px-6 py-4 bg-card hover:bg-muted border border-border rounded-2xl text-sm font-semibold transition-all"
-          >
-            <span>Explore 12 Subject Templates</span>
-          </button>
-        </div>
-
-        {/* Feature Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-16 w-full text-left">
-          <div className="p-6 bg-card border border-border rounded-3xl shadow-sm space-y-3">
-            <span className="p-3 bg-indigo-500/10 text-indigo-500 rounded-2xl inline-block">
-              <LayoutGrid className="w-6 h-6" />
-            </span>
-            <h3 className="text-base font-bold text-foreground">Multi-Topology Layouts</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Curved mind maps, concentric radial maps, hierarchical trees, concept networks, flowcharts, and Cornell notes.
-            </p>
+      {/* Asymmetric Studio Hero */}
+      <main className="flex-1 max-w-7xl mx-auto px-6 sm:px-12 py-16 sm:py-24 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+        {/* Left Column (7 cols): Typographic Precision */}
+        <div className="lg:col-span-7 space-y-6 text-left">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-muted border border-border text-[11px] font-mono tracking-tight text-muted-foreground">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <span>COGNITIVE VISUAL ARCHITECTURE</span>
           </div>
 
-          <div className="p-6 bg-card border border-border rounded-3xl shadow-sm space-y-3">
-            <span className="p-3 bg-purple-500/10 text-purple-500 rounded-2xl inline-block">
-              <RotateCcw className="w-6 h-6" />
+          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground leading-[1.08]">
+            Structure ideas into
+            <span className="inline-flex items-center mx-2 px-3 py-0.5 rounded-xl bg-muted border border-border text-primary font-mono text-2xl sm:text-4xl align-middle">
+              graph
             </span>
-            <h3 className="text-base font-bold text-foreground">SM-2 Spaced Repetition</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Scientifically proven retention scheduling, active recall concealment, blurting memory checks, and AI quizzes.
-            </p>
+            systems you remember.
+          </h1>
+
+          <p className="text-sm sm:text-base text-muted-foreground max-w-xl leading-relaxed">
+            Construct curved mind maps, concentric radial models, and Feynman teach-back boards. Integrated directly with SuperMemo SM-2 spaced repetition for permanent cognitive recall.
+          </p>
+
+          <div className="flex flex-wrap items-center gap-3 pt-3">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl text-xs font-semibold shadow-sm hover:bg-primary/95 transition-all"
+            >
+              <span>Open Studio Workspace</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => navigate('/whiteboard')}
+              className="flex items-center gap-2 px-5 py-3 bg-card hover:bg-muted border border-border rounded-xl text-xs font-medium text-foreground transition-all"
+            >
+              <span>Explain Studio (Whiteboard)</span>
+            </button>
           </div>
 
-          <div className="p-6 bg-card border border-border rounded-3xl shadow-sm space-y-3">
-            <span className="p-3 bg-emerald-500/10 text-emerald-500 rounded-2xl inline-block">
-              <Sparkles className="w-6 h-6" />
-            </span>
-            <h3 className="text-base font-bold text-foreground">AI Knowledge Extraction</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Turn raw notes, textbooks, and topics into structured mind maps with ELIF5 analogies and misconception audits.
-            </p>
+          {/* Core Technical Capabilities Tags */}
+          <div className="pt-6 border-t border-border/80 flex flex-wrap gap-4 text-xs font-mono text-muted-foreground">
+            <div>
+              <span className="text-foreground font-semibold">01/</span> 6 Dynamic Graph Layouts
+            </div>
+            <div>
+              <span className="text-foreground font-semibold">02/</span> SM-2 Spaced Retrieval
+            </div>
+            <div>
+              <span className="text-foreground font-semibold">03/</span> Multi-Format Export
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column (5 cols): Interactive Preview Card (Asymmetric) */}
+        <div className="lg:col-span-5 space-y-4">
+          <div className="p-6 bg-card border border-border rounded-2xl shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-border/80 pb-3">
+              <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+                Graph Inspector
+              </span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-muted text-foreground">
+                SM-2 Active
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              <div className="p-3 bg-muted/50 rounded-xl border border-border/70 space-y-1">
+                <span className="text-[10px] font-mono text-primary font-bold">ROOT CONCEPT</span>
+                <p className="text-xs font-semibold text-foreground">Neural Plasticity & Long-Term Potentiation</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-muted-foreground">
+                <div className="p-2.5 bg-background rounded-lg border border-border/80">
+                  <span className="block text-[9px] text-muted-foreground">INTERVAL</span>
+                  <span className="text-foreground font-semibold">6 Days (Ease 2.5)</span>
+                </div>
+                <div className="p-2.5 bg-background rounded-lg border border-border/80">
+                  <span className="block text-[9px] text-muted-foreground">RETENTION</span>
+                  <span className="text-foreground font-semibold">Optimal 94%</span>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground leading-relaxed pt-1">
+                Synaptic connections strengthen through coordinated, repeated stimulation. Active recall triggers memory trace consolidation.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-4 bg-muted/40 border border-border/80 rounded-xl text-left text-xs text-muted-foreground flex items-center justify-between">
+            <span>Feynman Teach-Back Studio Included</span>
+            <span className="font-mono text-primary text-[11px] font-semibold">Freehand / Pens</span>
           </div>
         </div>
       </main>

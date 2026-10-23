@@ -40,18 +40,15 @@ export const AppShell: React.FC = () => {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
       {/* Top Navigation */}
-      <header className="h-16 border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-40 px-4 sm:px-8 flex items-center justify-between">
+      <header className="h-14 border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-40 px-4 sm:px-8 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <NavLink to="/dashboard" className="flex items-center gap-2.5 group">
-            <span className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform">
-              <Brain className="w-5 h-5" />
+            <span className="w-8 h-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold shadow-sm transition-transform group-hover:scale-105">
+              <Brain className="w-4 h-4" />
             </span>
             <div className="flex flex-col">
-              <span className="font-extrabold text-base tracking-tight text-foreground flex items-center gap-1.5">
-                MindForge <span className="text-primary font-mono text-xs uppercase px-1.5 py-0.2 rounded bg-primary/10">AI</span>
-              </span>
-              <span className="text-[10px] text-muted-foreground font-medium -mt-1">
-                Visual Knowledge System
+              <span className="font-bold text-sm tracking-tight text-foreground flex items-center gap-1.5">
+                MindForge <span className="text-primary font-mono text-[10px] uppercase px-1.5 py-0.2 rounded bg-muted border border-border">Studio</span>
               </span>
             </div>
           </NavLink>
@@ -66,14 +63,14 @@ export const AppShell: React.FC = () => {
                   to={link.to}
                   className={({ isActive }) =>
                     clsx(
-                      'flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all',
+                      'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
                       isActive
-                        ? 'bg-primary/10 text-primary font-bold'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                        ? 'bg-muted text-foreground font-semibold border border-border/80'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
                     )
                   }
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-3.5 h-3.5" />
                   <span>{link.label}</span>
                 </NavLink>
               );
