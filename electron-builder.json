@@ -1,0 +1,25 @@
+{
+  "appId": "com.hamomap.mindforge",
+  "productName": "MindForge AI",
+  "copyright": "Copyright © 2026 MindForge AI",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "package.json"
+  ],
+  "linux": {
+    "target": ["AppImage", "tar.gz"],
+    "category": "Education",
+    "maintainer": "hamod1hamod"
+  },
+  "win": {
+    "target": ["portable", "nsis"]
+  },
+  "mac": {
+    "target": ["dmg", "zip"],
+    "category": "public.app-category.education"
+  }
+}

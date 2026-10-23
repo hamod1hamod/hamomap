@@ -6,6 +6,7 @@ node_modules/
 # Production output
 dist/
 dist-ssr/
+release/
 *.local
 
 # Environment & Secrets

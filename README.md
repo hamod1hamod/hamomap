@@ -84,6 +84,29 @@ npm run build
 
 ---
 
+## 🖥️ Desktop Application (Electron)
+
+MindForge AI can run directly as a native cross-platform desktop application for **Windows**, **Linux**, and **macOS** with local offline storage, native menus, and hardware-accelerated canvas.
+
+### Run Desktop App in Development:
+```bash
+npm run desktop:dev
+```
+
+### Build Desktop App for Windows (.exe):
+```bash
+npm run desktop:build:win
+```
+Outputs standalone executable in: `release/MindForge-AI-win32-x64/MindForge-AI.exe`
+
+### Build Desktop App for Linux:
+```bash
+npm run desktop:build:linux
+```
+Outputs native Linux binary in: `release/MindForge-AI-linux-x64/MindForge-AI`
+
+---
+
 ## ⚙️ Firebase Setup & Configuration
 
 1. Create a Firebase project in the [Firebase Console](https://console.firebase.google.com).
