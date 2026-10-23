@@ -46,7 +46,12 @@ import {
   ArrowLeft,
   Type,
   Scaling,
+  Mic,
+  MicOff,
+  Radio,
+  Check,
 } from 'lucide-react';
+import { VoiceToBoardService } from './VoiceToBoardService';
 import clsx from 'clsx';
 
 // Studio Calibrated Color Palette (Restrained, architectural, anti-neon)
@@ -187,6 +192,13 @@ export const WhiteboardStudio: React.FC = () => {
 
   // Inspector / Shape Palette Dropdown
   const [isShapePaletteOpen, setIsShapePaletteOpen] = useState(false);
+
+  // Voice Input State
+  const [isListening, setIsListening] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState('');
+  const [voiceStatus, setVoiceStatus] = useState<string>('');
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   // Sync to localStorage
   useEffect(() => {
@@ -381,6 +393,132 @@ export const WhiteboardStudio: React.FC = () => {
       const ctx = canvas.getContext('2d');
       ctx?.clearRect(0, 0, canvas.width, canvas.height);
     }
+  };
+
+  // Voice Introduction Feature: Start / Stop Speech Recognition
+  const toggleVoiceRecording = () => {
+    if (isListening) {
+      stopVoiceRecording();
+    } else {
+      startVoiceRecording();
+    }
+  };
+
+  const startVoiceRecording = () => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('متصفحك لا يدعم التعرف على الصوت المباشر (Web Speech API). يرجى استخدام متصفح Chrome أو Edge.');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      // Auto-detect or support both Arabic and English
+      recognition.lang = document.documentElement.getAttribute('dir') === 'rtl' ? 'ar-SA' : 'ar-EG';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        setVoiceTranscript('');
+        setVoiceStatus('جاري الاستماع لصوتك... تكلم بوضوح');
+      };
+
+      recognition.onresult = (event: any) => {
+        let currentTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          currentTranscript += event.results[i][0].transcript;
+        }
+        setVoiceTranscript(currentTranscript);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error === 'not-allowed') {
+          setVoiceStatus('يرجى السماح بالوصول إلى الميكروفون');
+        } else {
+          setVoiceStatus(`تنبيه: ${event.error}`);
+        }
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err: any) {
+      console.error(err);
+      setVoiceStatus('فشل بدء التسجيل الصوتي');
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+  };
+
+  // Commit voice transcript into a whiteboard shape
+  const handleCommitVoiceInput = async () => {
+    if (!voiceTranscript.trim()) {
+      stopVoiceRecording();
+      return;
+    }
+
+    stopVoiceRecording();
+    setIsProcessingVoice(true);
+    setVoiceStatus('جاري تحليل الصوت وتوليد البطاقة المناسبة...');
+
+    try {
+      const result = await VoiceToBoardService.parseVoiceToShape(voiceTranscript);
+
+      const id = 'shape-' + Date.now();
+      const centerX = Math.max(80, window.innerWidth / 2 - 160 + (Math.random() * 40 - 20));
+      const centerY = Math.max(120, window.innerHeight / 2 - 120 + (Math.random() * 40 - 20));
+
+      const newShape: BoardShape = {
+        id,
+        type: result.type,
+        x: centerX,
+        y: centerY,
+        width: result.type === 'concept-box' || result.type === 'qa-card' ? 320 : 260,
+        height: result.type === 'concept-box' || result.type === 'qa-card' ? 220 : 190,
+        title: result.title,
+        content: result.content,
+        color: result.color || (result.type === 'sticky' ? '#fef3c7' : '#0f172a'),
+        borderColor: result.borderColor || (result.type === 'sticky' ? '#f59e0b' : '#3b82f6'),
+        textColor: result.textColor || (result.type === 'sticky' ? '#78350f' : '#f8fafc'),
+        fontFamily: penFontFamily,
+        fontSize: 13,
+        answer: result.answer,
+        isAnswerRevealed: false,
+      };
+
+      setShapes((prev) => [...prev, newShape]);
+      setSelectedShapeId(id);
+      setActiveTool('select');
+      setVoiceTranscript('');
+      setVoiceStatus('');
+      confetti({ particleCount: 30, spread: 60 });
+    } catch (err) {
+      console.error(err);
+      setVoiceStatus('حدث خطأ أثناء معالجة الصوت');
+    } finally {
+      setIsProcessingVoice(false);
+    }
+  };
+
+  // Cancel voice input
+  const handleCancelVoiceInput = () => {
+    stopVoiceRecording();
+    setVoiceTranscript('');
+    setVoiceStatus('');
   };
 
   // Shape Creation Factory (Comprehensive collection: 12 types)
@@ -988,8 +1126,32 @@ ${fullNotes}
           </div>
         </div>
 
-        {/* Right Actions: AI Review & Export */}
+        {/* Right Actions: Voice Input, AI Review & Export */}
         <div className="flex items-center gap-1.5 bg-card/90 backdrop-blur-xl border border-border p-1 rounded-xl shadow-sm pointer-events-auto">
+          {/* Voice Input Button */}
+          <button
+            onClick={toggleVoiceRecording}
+            className={clsx(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all relative',
+              isListening
+                ? 'bg-rose-600 text-white shadow-xs animate-pulse'
+                : 'bg-muted hover:bg-muted/80 text-foreground border border-border/80'
+            )}
+            title="تحدث لإدخال البيانات والمعلومات بالصوت (Voice Input)"
+          >
+            {isListening ? (
+              <>
+                <Radio className="w-3.5 h-3.5 animate-spin" />
+                <span>جاري الاستماع...</span>
+              </>
+            ) : (
+              <>
+                <Mic className="w-3.5 h-3.5 text-primary" />
+                <span className="hidden sm:inline">شرح صوتي</span>
+              </>
+            )}
+          </button>
+
           <button
             onClick={handleEvaluateWithAI}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold shadow-xs hover:bg-primary/95 transition-all"
@@ -1508,6 +1670,82 @@ ${fullNotes}
           ))}
         </div>
       </footer>
+
+      {/* Live Voice Input Floating Pill / Modal */}
+      {(isListening || voiceTranscript || isProcessingVoice) && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4 animate-in fade-in slide-in-from-top-3 duration-200 pointer-events-auto">
+          <div className="bg-card/95 backdrop-blur-2xl border border-border rounded-2xl shadow-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-border/80 pb-2">
+              <div className="flex items-center gap-2">
+                <span className={clsx(
+                  'w-3 h-3 rounded-full',
+                  isListening ? 'bg-rose-500 animate-ping' : 'bg-primary'
+                )} />
+                <span className="text-xs font-bold text-foreground">
+                  {isProcessingVoice
+                    ? 'جاري التحويل لبطاقة ذكية...'
+                    : isListening
+                    ? 'الاستماع لصوتك نشط'
+                    : 'جاهز للإدراج في السبورة'}
+                </span>
+              </div>
+              <button
+                onClick={handleCancelVoiceInput}
+                className="text-xs text-muted-foreground hover:text-foreground px-1.5 py-0.5 rounded hover:bg-muted"
+              >
+                إلغاء
+              </button>
+            </div>
+
+            {/* Transcript Preview */}
+            <div className="min-h-16 max-h-32 overflow-y-auto p-2.5 bg-muted/50 rounded-xl border border-border/60 text-xs text-foreground leading-relaxed">
+              {voiceTranscript ? (
+                <p>{voiceTranscript}</p>
+              ) : (
+                <p className="text-muted-foreground italic">
+                  تحدث الآن واشرح فكرتك... (مثال: "ما هي شروط التوازن الكيميائي؟ الإجابة: ثبات التراكيز وتساوي سرعة التفاعلين")
+                </p>
+              )}
+            </div>
+
+            {/* Action Bar */}
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <span className="text-[10px] font-mono text-muted-foreground">
+                {voiceStatus || (isListening ? 'يتعرف على اللغة العربية والإنجليزية' : 'اضغط إدراج لإنشاء الشكل')}
+              </span>
+
+              <div className="flex items-center gap-2">
+                {isListening ? (
+                  <button
+                    onClick={stopVoiceRecording}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 text-white rounded-xl text-xs font-semibold shadow-xs hover:bg-rose-700 transition-colors"
+                  >
+                    <MicOff className="w-3.5 h-3.5" />
+                    <span>إيقاف التسجيل</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={startVoiceRecording}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 text-foreground rounded-xl text-xs font-semibold transition-colors"
+                  >
+                    <Mic className="w-3.5 h-3.5" />
+                    <span>تحدث مجدداً</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={handleCommitVoiceInput}
+                  disabled={!voiceTranscript.trim() || isProcessingVoice}
+                  className="flex items-center gap-1.5 px-4 py-1.5 bg-primary text-primary-foreground rounded-xl text-xs font-bold shadow-xs hover:bg-primary/95 disabled:opacity-40 transition-all"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>إدراج في السبورة</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AI Feynman Review Modal */}
       {isAiReviewOpen && (
