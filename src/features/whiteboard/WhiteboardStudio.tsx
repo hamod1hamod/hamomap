@@ -6,6 +6,7 @@ import {
   DrawingStroke,
   BoardShape,
   BoardBackground,
+  PenFontFamily,
 } from './types';
 import { aiClient } from '@/services/ai/aiClient';
 import html2canvas from 'html2canvas';
@@ -34,34 +35,46 @@ import {
   Minimize2,
   Eye,
   EyeOff,
-  Check,
-  ChevronRight,
-  RotateCcw,
-  BookOpen,
-  ArrowLeft,
   Lightbulb,
   FileText,
-  Sliders,
+  Hexagon,
+  Binary,
+  ListOrdered,
+  Grid,
+  Copy,
+  ChevronDown,
+  ArrowLeft,
+  Type,
+  Scaling,
 } from 'lucide-react';
 import clsx from 'clsx';
 
-const COLOR_PALETTE = [
-  { name: 'أبيض / أسود', value: '#ffffff', darkValue: '#0f172a' },
-  { name: 'أصفر مشرق', value: '#facc15' },
-  { name: 'سماوي فاقع', value: '#06b6d4' },
-  { name: 'أخضر زمردي', value: '#10b981' },
-  { name: 'وردي نيون', value: '#f43f5e' },
-  { name: 'بنفسجي ملكي', value: '#a855f7' },
-  { name: 'برتقالي دافئ', value: '#f97316' },
-  { name: 'رمادي هادئ', value: '#94a3b8' },
+// Studio Calibrated Color Palette (Restrained, architectural, anti-neon)
+const PEN_PALETTE = [
+  { name: 'Pure Chalk', value: '#ffffff' },
+  { name: 'Warm Amber', value: '#f59e0b' },
+  { name: 'Electric Cobalt', value: '#3b82f6' },
+  { name: 'Emerald Sage', value: '#10b981' },
+  { name: 'Crimson Rose', value: '#f43f5e' },
+  { name: 'Muted Slate', value: '#94a3b8' },
+  { name: 'Charcoal Noir', value: '#1e293b' },
 ];
 
-const STICKY_COLORS = [
-  { name: 'أصفر كلاسيكي', bg: '#fef08a', text: '#713f12', border: '#fde047' },
-  { name: 'وردي منعش', bg: '#fbcfe8', text: '#831843', border: '#f472b6' },
-  { name: 'أخضر نعناعي', bg: '#bbf7d0', text: '#14532d', border: '#86efac' },
-  { name: 'سماوي ناعم', bg: '#bae6fd', text: '#0c4a6e', border: '#7dd3fc' },
-  { name: 'بنفسجي لافندر', bg: '#e9d5ff', text: '#581c87', border: '#d8b4fe' },
+const SHAPE_PALETTE = [
+  { name: 'Obsidian Studio', bg: '#0f172a', border: '#334155', text: '#f8fafc' },
+  { name: 'Chalk White', bg: '#ffffff', border: '#cbd5e1', text: '#0f172a' },
+  { name: 'Amber Note', bg: '#fef3c7', border: '#f59e0b', text: '#78350f' },
+  { name: 'Cobalt Focus', bg: '#eff6ff', border: '#3b82f6', text: '#1e3a8a' },
+  { name: 'Sage Clarity', bg: '#ecfdf5', border: '#10b981', text: '#064e3b' },
+  { name: 'Rose Caution', bg: '#fff1f2', border: '#f43f5e', text: '#881337' },
+  { name: 'Lavender Insight', bg: '#f5f3ff', border: '#8b5cf6', text: '#4c1d95' },
+];
+
+const PEN_FONTS: { id: PenFontFamily; name: string; css: string }[] = [
+  { id: 'arabic', name: 'خط عربي حديث (Plex)', css: "'IBM Plex Sans Arabic', sans-serif" },
+  { id: 'handwritten', name: 'خط يدوي حر (Caveat)', css: "'Caveat', cursive, sans-serif" },
+  { id: 'sans', name: 'خط هندسي (Jakarta)', css: "'Plus Jakarta Sans', sans-serif" },
+  { id: 'mono', name: 'كود وأرقام (Mono)', css: "'JetBrains Mono', monospace" },
 ];
 
 export const WhiteboardStudio: React.FC = () => {
@@ -69,24 +82,27 @@ export const WhiteboardStudio: React.FC = () => {
   const [searchParams] = useSearchParams();
   const initialTopic = searchParams.get('topic') || '';
 
-  // Board State
+  // Board Metadata & Viewport
   const [boardTitle, setBoardTitle] = useState(
-    initialTopic ? `شرح: ${initialTopic}` : 'سبورة الشرح الذاتي وتفسير المفاهيم'
+    initialTopic ? `شرح: ${initialTopic}` : 'استوديو الشرح الذاتي وتفسير المفاهيم'
   );
   const [background, setBackground] = useState<BoardBackground>('chalkboard');
-  const [activeTool, setActiveTool] = useState<WhiteboardTool>('pen');
-  const [penColor, setPenColor] = useState<string>('#facc15');
-  const [strokeWidth, setStrokeWidth] = useState<number>(3);
 
-  // Drawing strokes
+  // Drawing Tools State
+  const [activeTool, setActiveTool] = useState<WhiteboardTool>('pen');
+  const [penColor, setPenColor] = useState<string>('#ffffff');
+  const [strokeWidth, setStrokeWidth] = useState<number>(3);
+  const [penFontFamily, setPenFontFamily] = useState<PenFontFamily>('arabic');
+
+  // Drawing Strokes
   const [strokes, setStrokes] = useState<DrawingStroke[]>([]);
   const [redoStrokes, setRedoStrokes] = useState<DrawingStroke[]>([]);
   const [isDrawing, setIsDrawing] = useState(false);
   const currentStrokeRef = useRef<DrawingStroke | null>(null);
 
-  // Shapes & Cards
+  // Shapes & Structure
   const [shapes, setShapes] = useState<BoardShape[]>(() => {
-    const saved = localStorage.getItem('hamomap_whiteboard_shapes');
+    const saved = localStorage.getItem('hamomap_whiteboard_shapes_v2');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -94,61 +110,54 @@ export const WhiteboardStudio: React.FC = () => {
         console.error(e);
       }
     }
-    // Default starter setup: Feynman Technique starter
+    // Default starter setup: Feynman Studio Framework
     return [
       {
         id: 'shape-1',
         type: 'concept-box',
         x: 60,
-        y: 80,
+        y: 90,
         width: 320,
         height: 200,
-        title: initialTopic || 'المفهوم الأساسي (The Core Concept)',
-        content: 'اكتب هنا اسم الفكرة اللي اتعلمتها وتعريفها الجوهري بأسلوبك بدون تعقيد...',
-        color: '#1e1b4b',
-        borderColor: '#6366f1',
-        textColor: '#e0e7ff',
+        title: initialTopic || 'المفهوم الجوهري (Core Concept)',
+        content: 'اكتب هنا اسم الفكرة التي تريد شرحها وتعريفها بأبسط الكلمات دون تعقيد...',
+        color: '#0f172a',
+        borderColor: '#3b82f6',
+        textColor: '#f8fafc',
+        fontFamily: 'arabic',
+        fontSize: 14,
       },
       {
         id: 'shape-2',
         type: 'sticky',
         x: 420,
-        y: 80,
+        y: 90,
         width: 260,
-        height: 200,
-        title: '💡 تشبيه من الواقع (Analogy)',
-        content: 'شبه المفهوم ده بحاجة بنشوفها في حياتنا اليومية عشان تثبت في الذاكرة!',
-        color: '#fef08a',
-        borderColor: '#fde047',
-        textColor: '#713f12',
+        height: 190,
+        title: 'تشبيه من الواقع (Analogy)',
+        content: 'شبه المفهوم بحاجة يومية ملموسة بنشوفها في حياتنا عشان تثبت بالذاكرة!',
+        color: '#fef3c7',
+        borderColor: '#f59e0b',
+        textColor: '#78350f',
+        fontFamily: 'arabic',
+        fontSize: 13,
       },
       {
         id: 'shape-3',
         type: 'qa-card',
         x: 720,
-        y: 80,
-        width: 300,
+        y: 90,
+        width: 320,
         height: 220,
-        title: 'سؤال لاختبار الفهم الذاتي',
-        content: 'ليه المفهوم ده مهم؟ وإيه اللي يحصل لو ما استخدمناهوش؟',
-        answer: 'الإجابة والتفسير العميق: لأن هذا المفهوم يحل مشكلة معينة...',
+        title: 'اختبار الفهم الذاتي (Self-Quiz)',
+        content: 'لماذا هذا المفهوم حتمي؟ وما الذي ينهار في غيابه؟',
+        answer: 'التفسير الدقيق: لأنه ينظم تدفق البيانات ويقلل التعقيد الحسابي...',
         isAnswerRevealed: false,
-        color: '#064e3b',
+        color: '#ecfdf5',
         borderColor: '#10b981',
-        textColor: '#ecfdf5',
-      },
-      {
-        id: 'shape-4',
-        type: 'sticky',
-        x: 60,
-        y: 330,
-        width: 280,
-        height: 180,
-        title: '⚠️ نقاط لخبطتني (Misconceptions)',
-        content: 'سجل هنا الحاجات اللي كانت صعبة عليك أو خلطت بينها وبين مفاهيم تانية...',
-        color: '#fbcfe8',
-        borderColor: '#f472b6',
-        textColor: '#831843',
+        textColor: '#064e3b',
+        fontFamily: 'arabic',
+        fontSize: 13,
       },
     ];
   });
@@ -157,7 +166,16 @@ export const WhiteboardStudio: React.FC = () => {
   const [draggingShapeId, setDraggingShapeId] = useState<string | null>(null);
   const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Fullscreen
+  // Resizing state
+  const [resizingShapeId, setResizingShapeId] = useState<string | null>(null);
+  const resizeStartRef = useRef<{ width: number; height: number; startX: number; startY: number }>({
+    width: 0,
+    height: 0,
+    startX: 0,
+    startY: 0,
+  });
+
+  // Fullscreen & Modals
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -167,12 +185,15 @@ export const WhiteboardStudio: React.FC = () => {
   const [isAiEvaluating, setIsAiEvaluating] = useState(false);
   const [aiReviewResult, setAiReviewResult] = useState<any>(null);
 
-  // Save shapes to localStorage
+  // Inspector / Shape Palette Dropdown
+  const [isShapePaletteOpen, setIsShapePaletteOpen] = useState(false);
+
+  // Sync to localStorage
   useEffect(() => {
-    localStorage.setItem('hamomap_whiteboard_shapes', JSON.stringify(shapes));
+    localStorage.setItem('hamomap_whiteboard_shapes_v2', JSON.stringify(shapes));
   }, [shapes]);
 
-  // Setup Canvas resolution & redraw strokes
+  // Redraw Canvas Strokes
   const redrawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -181,7 +202,6 @@ export const WhiteboardStudio: React.FC = () => {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw all completed strokes
     strokes.forEach((stroke) => {
       if (stroke.points.length < 2) return;
 
@@ -206,7 +226,7 @@ export const WhiteboardStudio: React.FC = () => {
       ctx.stroke();
       ctx.globalAlpha = 1.0;
 
-      // Draw arrow head if arrow tool
+      // Draw arrow head if arrow
       if (stroke.tool === 'arrow' && stroke.points.length >= 2) {
         const p1 = stroke.points[stroke.points.length - 2];
         const p2 = stroke.points[stroke.points.length - 1];
@@ -231,56 +251,44 @@ export const WhiteboardStudio: React.FC = () => {
     });
   }, [strokes]);
 
-  // Handle Resize of canvas
+  // Resize Canvas Listener
   useEffect(() => {
-    const handleResize = () => {
-      const canvas = canvasRef.current;
-      const container = containerRef.current;
-      if (!canvas || !container) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-      canvas.width = container.clientWidth;
-      canvas.height = container.clientHeight;
+    const updateSize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
       redrawCanvas();
     };
 
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
   }, [redrawCanvas]);
 
-  useEffect(() => {
-    redrawCanvas();
-  }, [strokes, redrawCanvas]);
-
-  // Mouse / Pointer handlers for drawing
-  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  // Pointer Events for Freehand Canvas
+  const handlePointerDown = (e: React.PointerEvent) => {
     if (activeTool === 'select') return;
+    setIsDrawing(true);
 
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
     if (activeTool === 'eraser') {
-      // Remove strokes close to pointer
-      setStrokes((prev) =>
-        prev.filter((stroke) => {
-          return !stroke.points.some(
-            (p) => Math.hypot(p.x - x, p.y - y) < strokeWidth * 3
-          );
-        })
-      );
+      eraseStrokesAt(x, y);
       return;
     }
 
-    setIsDrawing(true);
     const newStroke: DrawingStroke = {
       id: 'stroke-' + Date.now(),
       points: [{ x, y }],
       color: penColor,
       width: activeTool === 'highlighter' ? strokeWidth * 4 : strokeWidth,
-      tool: activeTool as 'pen' | 'highlighter' | 'arrow',
+      tool: activeTool === 'arrow' ? 'arrow' : activeTool === 'highlighter' ? 'highlighter' : 'pen',
     };
 
     currentStrokeRef.current = newStroke;
@@ -288,106 +296,119 @@ export const WhiteboardStudio: React.FC = () => {
     setRedoStrokes([]);
   };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDrawing) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    if (activeTool === 'eraser' && (e.buttons === 1 || e.pressure > 0)) {
-      setStrokes((prev) =>
-        prev.filter((stroke) => {
-          return !stroke.points.some(
-            (p) => Math.hypot(p.x - x, p.y - y) < strokeWidth * 3
-          );
-        })
-      );
+    if (activeTool === 'eraser') {
+      eraseStrokesAt(x, y);
       return;
     }
 
-    if (!isDrawing || !currentStrokeRef.current) return;
+    if (!currentStrokeRef.current) return;
 
     currentStrokeRef.current.points.push({ x, y });
 
-    // Live stroke drawing for instant feedback
-    const canvas = canvasRef.current;
-    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     const pts = currentStrokeRef.current.points;
-    if (pts.length >= 2) {
-      ctx.beginPath();
-      ctx.moveTo(pts[pts.length - 2].x, pts[pts.length - 2].y);
-      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
-      ctx.strokeStyle = currentStrokeRef.current.color;
-      ctx.lineWidth = currentStrokeRef.current.width;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+    if (pts.length < 2) return;
 
-      if (currentStrokeRef.current.tool === 'highlighter') {
-        ctx.globalAlpha = 0.35;
-      }
-      ctx.stroke();
+    const p1 = pts[pts.length - 2];
+    const p2 = pts[pts.length - 1];
+
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.strokeStyle = currentStrokeRef.current.color;
+    ctx.lineWidth = currentStrokeRef.current.width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    if (currentStrokeRef.current.tool === 'highlighter') {
+      ctx.globalAlpha = 0.35;
+    } else {
       ctx.globalAlpha = 1.0;
     }
+
+    ctx.stroke();
+    ctx.globalAlpha = 1.0;
   };
 
   const handlePointerUp = () => {
+    if (!isDrawing) return;
     setIsDrawing(false);
     currentStrokeRef.current = null;
     redrawCanvas();
   };
 
-  // Undo / Redo for drawing
+  const eraseStrokesAt = (x: number, y: number) => {
+    const threshold = 18;
+    setStrokes((prev) =>
+      prev.filter((stroke) => {
+        return !stroke.points.some((p) => Math.hypot(p.x - x, p.y - y) < threshold);
+      })
+    );
+  };
+
+  // Undo / Redo
   const handleUndo = () => {
     if (strokes.length === 0) return;
     const last = strokes[strokes.length - 1];
     setStrokes((prev) => prev.slice(0, -1));
-    setRedoStrokes((prev) => [last, ...prev]);
+    setRedoStrokes((prev) => [...prev, last]);
   };
 
   const handleRedo = () => {
     if (redoStrokes.length === 0) return;
-    const next = redoStrokes[0];
-    setRedoStrokes((prev) => prev.slice(1));
-    setStrokes((prev) => [...prev, next]);
+    const last = redoStrokes[redoStrokes.length - 1];
+    setRedoStrokes((prev) => prev.slice(0, -1));
+    setStrokes((prev) => [...prev, last]);
   };
 
   const handleClearDrawing = () => {
-    if (strokes.length === 0) return;
-    if (confirm('هل تريد مسح كل الرسومات والخطوط المكتوبة بالقلم؟')) {
+    if (confirm('هل تريد مسح كل الرسومات والخطوط الحرة؟')) {
       setStrokes([]);
       setRedoStrokes([]);
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx?.clearRect(0, 0, canvas.width, canvas.height);
     }
   };
 
-  // Shape manipulations
-  const handleAddShape = (type: ShapeType, presetColor?: string) => {
+  // Shape Creation Factory (Comprehensive collection: 12 types)
+  const handleAddShape = (type: ShapeType) => {
     const id = 'shape-' + Date.now();
+    const centerX = Math.max(80, window.innerWidth / 2 - 160 + (Math.random() * 40 - 20));
+    const centerY = Math.max(120, window.innerHeight / 2 - 120 + (Math.random() * 40 - 20));
+
     let newShape: BoardShape;
 
-    const centerX = 300 + Math.random() * 100;
-    const centerY = 180 + Math.random() * 100;
-
     switch (type) {
-      case 'sticky': {
-        const color = presetColor || STICKY_COLORS[Math.floor(Math.random() * STICKY_COLORS.length)].bg;
+      case 'sticky':
         newShape = {
           id,
           type,
           x: centerX,
           y: centerY,
-          width: 240,
+          width: 250,
           height: 190,
           title: 'ملاحظة لاصقة',
-          content: 'اكتب فكرة أو تفسير سريع...',
-          color,
-          borderColor: '#e2e8f0',
-          textColor: '#1e293b',
+          content: 'اكتب فكرة سريعة أو ملحوظة هامشية...',
+          color: '#fef3c7',
+          borderColor: '#f59e0b',
+          textColor: '#78350f',
+          fontFamily: penFontFamily,
+          fontSize: 13,
         };
         break;
-      }
       case 'concept-box':
         newShape = {
           id,
@@ -396,11 +417,13 @@ export const WhiteboardStudio: React.FC = () => {
           y: centerY,
           width: 320,
           height: 220,
-          title: 'صندوق مفهوم جديد',
+          title: 'صندوق مفهوم جوهري',
           content: 'شرح وتوضيح المفهوم بالتفصيل، يمكنك إضافة خطوات أو نقاط هنا...',
-          color: '#1e293b',
-          borderColor: '#6366f1',
+          color: '#0f172a',
+          borderColor: '#3b82f6',
           textColor: '#f8fafc',
+          fontFamily: penFontFamily,
+          fontSize: 14,
         };
         break;
       case 'qa-card':
@@ -409,15 +432,17 @@ export const WhiteboardStudio: React.FC = () => {
           type,
           x: centerX,
           y: centerY,
-          width: 300,
-          height: 220,
-          title: 'سؤال اختباري للشرح',
-          content: 'اطرح سؤالاً لتحدي فهمك...',
-          answer: 'اكتب الإجابة النموذجية هنا، ثم اخفها لتختبر نفسك!',
+          width: 320,
+          height: 230,
+          title: 'سؤال استرجاع نشط',
+          content: 'اطرح سؤالاً يتحدى فهمك للمفهوم...',
+          answer: 'اكتب الإجابة والتفسير الدقيق هنا، ثم اخفها لتختبر نفسك!',
           isAnswerRevealed: false,
-          color: '#064e3b',
+          color: '#ecfdf5',
           borderColor: '#10b981',
-          textColor: '#ecfdf5',
+          textColor: '#064e3b',
+          fontFamily: penFontFamily,
+          fontSize: 13,
         };
         break;
       case 'circle':
@@ -429,10 +454,12 @@ export const WhiteboardStudio: React.FC = () => {
           width: 220,
           height: 220,
           title: '',
-          content: 'فكرة محورية',
-          color: '#3b82f620',
+          content: 'مركز الفكرة',
+          color: '#eff6ff',
           borderColor: '#3b82f6',
-          textColor: '#60a5fa',
+          textColor: '#1e3a8a',
+          fontFamily: penFontFamily,
+          fontSize: 14,
         };
         break;
       case 'diamond':
@@ -441,13 +468,16 @@ export const WhiteboardStudio: React.FC = () => {
           type,
           x: centerX,
           y: centerY,
-          width: 200,
-          height: 200,
+          width: 210,
+          height: 210,
           title: 'قرار / شرط',
-          content: 'هل الشرط صحيح؟',
-          color: '#f59e0b20',
+          content: 'هل الشرط متوفر؟',
+          color: '#fffbeb',
           borderColor: '#f59e0b',
-          textColor: '#fbbf24',
+          textColor: '#78350f',
+          fontFamily: penFontFamily,
+          fontSize: 13,
+          borderStyle: 'dashed',
         };
         break;
       case 'callout':
@@ -456,13 +486,83 @@ export const WhiteboardStudio: React.FC = () => {
           type,
           x: centerX,
           y: centerY,
-          width: 260,
-          height: 150,
-          title: 'فقاعة شرح',
-          content: 'لاحظ هذه النقطة بدقة!',
-          color: '#8b5cf620',
+          width: 270,
+          height: 160,
+          title: 'ملحوظة دقيقة',
+          content: 'انتبه: هذا الاستثناء يقع في الحالات الخاصة!',
+          color: '#f5f3ff',
           borderColor: '#8b5cf6',
-          textColor: '#c084fc',
+          textColor: '#4c1d95',
+          fontFamily: penFontFamily,
+          fontSize: 13,
+        };
+        break;
+      case 'hex':
+        newShape = {
+          id,
+          type,
+          x: centerX,
+          y: centerY,
+          width: 240,
+          height: 200,
+          title: 'وحدة بنائية (Module)',
+          content: 'مكون أساسي داخل المنظومة المعرفية',
+          color: '#0f172a',
+          borderColor: '#64748b',
+          textColor: '#f8fafc',
+          fontFamily: penFontFamily,
+          fontSize: 13,
+        };
+        break;
+      case 'formula':
+        newShape = {
+          id,
+          type,
+          x: centerX,
+          y: centerY,
+          width: 320,
+          height: 150,
+          title: 'معادلة / قانون رياضي',
+          content: 'E = m * c^2\n(أو الصيغة التحليلية للعلاقة)',
+          color: '#0f172a',
+          borderColor: '#f59e0b',
+          textColor: '#fef3c7',
+          fontFamily: 'mono',
+          fontSize: 15,
+        };
+        break;
+      case 'step-card':
+        newShape = {
+          id,
+          type,
+          x: centerX,
+          y: centerY,
+          width: 290,
+          height: 190,
+          title: 'الخطوة رقم [1]',
+          content: '1. حدد المدخلات\n2. طبق التحويل الرياضي\n3. تحقق من النتائج',
+          color: '#ffffff',
+          borderColor: '#cbd5e1',
+          textColor: '#0f172a',
+          fontFamily: penFontFamily,
+          fontSize: 13,
+        };
+        break;
+      case 'table':
+        newShape = {
+          id,
+          type,
+          x: centerX,
+          y: centerY,
+          width: 350,
+          height: 220,
+          title: 'مقارنة وتحليل (A vs B)',
+          content: 'الوجه الأول | المزايا | العيوب\nالوجه الثاني | البدائل | القيود',
+          color: '#0f172a',
+          borderColor: '#334155',
+          textColor: '#f8fafc',
+          fontFamily: 'mono',
+          fontSize: 12,
         };
         break;
       case 'heading':
@@ -471,11 +571,12 @@ export const WhiteboardStudio: React.FC = () => {
           type,
           x: centerX,
           y: centerY,
-          width: 400,
-          height: 70,
-          content: 'عنوان رئيسي للشرح',
+          width: 420,
+          height: 80,
+          content: 'عنوان الشرح الرئيسي',
           color: 'transparent',
           textColor: '#f8fafc',
+          fontFamily: 'arabic',
           fontSize: 28,
         };
         break;
@@ -485,19 +586,22 @@ export const WhiteboardStudio: React.FC = () => {
           type: 'rectangle',
           x: centerX,
           y: centerY,
-          width: 260,
-          height: 160,
-          title: 'مربع معلومات',
-          content: 'اكتب هنا ما تريد توضيحه...',
-          color: '#1e293b',
+          width: 270,
+          height: 170,
+          title: 'كتلة معلومات',
+          content: 'اكتب هنا ما تريد توضيحه بدقة...',
+          color: '#0f172a',
           borderColor: '#475569',
           textColor: '#f8fafc',
+          fontFamily: penFontFamily,
+          fontSize: 13,
         };
     }
 
     setShapes((prev) => [...prev, newShape]);
     setSelectedShapeId(id);
-    setActiveTool('select'); // Switch to select to interact with the new shape
+    setActiveTool('select');
+    setIsShapePaletteOpen(false);
   };
 
   const handleUpdateShape = (id: string, updates: Partial<BoardShape>) => {
@@ -517,8 +621,8 @@ export const WhiteboardStudio: React.FC = () => {
     const newShape: BoardShape = {
       ...target,
       id: 'shape-' + Date.now(),
-      x: target.x + 30,
-      y: target.y + 30,
+      x: target.x + 35,
+      y: target.y + 35,
     };
     setShapes((prev) => [...prev, newShape]);
     setSelectedShapeId(newShape.id);
@@ -540,17 +644,42 @@ export const WhiteboardStudio: React.FC = () => {
     };
   };
 
+  // Resizing Handler
+  const handleResizePointerDown = (e: React.PointerEvent, id: string) => {
+    e.stopPropagation();
+    const shape = shapes.find((s) => s.id === id);
+    if (!shape) return;
+
+    setResizingShapeId(id);
+    resizeStartRef.current = {
+      width: shape.width,
+      height: shape.height,
+      startX: e.clientX,
+      startY: e.clientY,
+    };
+  };
+
   const handleContainerPointerMove = (e: React.PointerEvent) => {
-    if (!draggingShapeId || activeTool !== 'select') return;
+    if (resizingShapeId) {
+      const deltaX = e.clientX - resizeStartRef.current.startX;
+      const deltaY = e.clientY - resizeStartRef.current.startY;
+      const newWidth = Math.max(160, resizeStartRef.current.width + deltaX);
+      const newHeight = Math.max(100, resizeStartRef.current.height + deltaY);
 
-    const newX = Math.max(10, e.clientX - dragOffsetRef.current.x);
-    const newY = Math.max(10, e.clientY - dragOffsetRef.current.y);
+      handleUpdateShape(resizingShapeId, { width: newWidth, height: newHeight });
+      return;
+    }
 
-    handleUpdateShape(draggingShapeId, { x: newX, y: newY });
+    if (draggingShapeId && activeTool === 'select') {
+      const newX = Math.max(10, e.clientX - dragOffsetRef.current.x);
+      const newY = Math.max(10, e.clientY - dragOffsetRef.current.y);
+      handleUpdateShape(draggingShapeId, { x: newX, y: newY });
+    }
   };
 
   const handleContainerPointerUp = () => {
     setDraggingShapeId(null);
+    setResizingShapeId(null);
   };
 
   // AI Feynman Evaluation
@@ -569,83 +698,70 @@ export const WhiteboardStudio: React.FC = () => {
     if (!aiClient.isConfigured()) {
       setIsAiEvaluating(false);
       setAiReviewResult({
-        score: 88,
-        clarityVerdict: 'شرح ممتاز ومرتب ومنسق بطريقة واضحة!',
+        score: 91,
+        clarityVerdict: 'شرح منظم ودقيق وفق نموذج الاسترجاع المكاني!',
         strengths: [
-          'استخدام كتل ومربعات منفصلة يساعد العقل على فصل الأفكار.',
+          'استخدام كتل معرفية منفصلة يساعد العقل على استيعاب الحدود بين المفاهيم.',
           'الربط بالتشبيه من الواقع (Analogy) يقوي الذاكرة طويلة المدى.',
-          'وضع أسئلة ذاتية يعزز الاسترجاع النشط (Active Recall).',
+          'بطاقة السؤال والتفسير المخفي تطبق مبدأ الاسترجاع النشط (Active Recall).',
         ],
         improvements: [
-          'جرب ترسم أسهم أو خطوط بالقلم لتوضح تسلسل الأسباب والنتائج.',
-          'احرص على ذكر متى يفشل هذا المفهوم أو الحالات الخاصة به.',
+          'ارسم أسهماً بالقلم لربط المفهوم الجوهري مباشرة ببطاقة التشبيه.',
+          'أضف كلمة مفتاحية واحدة في عنوان كل بطاقة لتقليل العبء المعرفي.',
         ],
-        feynmanAdvice:
-          'أنت تطبق أسلوب فاينمان بشكل ممتاز! الخطوة القادمة: اشرح هذه السبورة بصوت عالي كأنك تشرح لزميل لك.',
+        feynmanAdvice: 'البساطة هي المعيار النهائي للتمكن. إذا شرحت الفكرة لطفل وفهمها، فأنت متقن لها تماماً.',
       });
-      confetti({ particleCount: 40, spread: 60 });
       return;
     }
 
     try {
-      const prompt = `أنت خبير في تقنية فاينمان للتعلم الذاتي (Feynman Technique). قام الطالب بكتابة وشرح المفهوم التالي على سبورته التفاعلية:
-العنوان: ${boardTitle}
-الملاحظات والأشكال المكتوبة:
+      const prompt = `أنت البروفيسور ريتشارد فاينمان ومختص في أساليب التعلم المعرفي السريع.
+المستخدم قام بشرح وتفسير موضوع على سبورة بيضاء وقام بتدوين هذه البطاقات والشروحات:
+
 ${fullNotes}
 
-قيّم شرحه وقدم تقريراً مشجعاً بتنسيق JSON:
+قيم مدى بساطة ووضوح وتماسك هذا الشرح وفق تقنية فاينمان (Feynman Technique).
+أعد النتيجة بصيغة JSON فقط:
 {
   "score": 90,
-  "clarityVerdict": "حكم موجز ومشجع على جودة التفسير",
-  "strengths": ["نقطة قوة 1", "نقطة قوة 2", "نقطة قوة 3"],
-  "improvements": ["ثغرة أو فكرة إضافية للتوضيح 1", "نصيحة إضافية 2"],
-  "feynmanAdvice": "نصيحة ذهبية لتثبيت المفهوم للأبد"
+  "clarityVerdict": "جملة تلخص جودة الشرح",
+  "strengths": ["نقطة قوة 1", "نقطة قوة 2"],
+  "improvements": ["نقطة تحتاج تبسيط أو مراجعة 1", "نقطة 2"],
+  "feynmanAdvice": "نصيحة ذهبية لتعميق الحفظ والفهم"
 }`;
 
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${aiClient.getApiKey()}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: 'application/json' },
-          }),
-        }
-      );
-
-      if (!res.ok) throw new Error('API Error');
-      const data = await res.json();
-      const parsed = JSON.parse(data.candidates[0].content.parts[0].text);
+      const res = await aiClient.generateText(prompt);
+      const clean = res.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(clean);
       setAiReviewResult(parsed);
       confetti({ particleCount: 50, spread: 70 });
     } catch (err) {
       console.error(err);
       setAiReviewResult({
-        score: 85,
-        clarityVerdict: 'شرح رائع ومنظم!',
-        strengths: ['تقسيم المعلومات في مربعات يساعد الذاكرة المكانية.'],
-        improvements: ['يمكنك كتابة تفاصيل إضافية بالقلم لربط الأفكار.'],
-        feynmanAdvice: 'استمر في الشرح والتكرار المتباعد!',
+        score: 87,
+        clarityVerdict: 'شرح ممتاز ومتماسك!',
+        strengths: ['التقسيم البصري والوضوح اللغوي.'],
+        improvements: ['ارسم روابط وأسهم لربط الأفكار ببعضها.'],
+        feynmanAdvice: 'كرر التفسير الذاتي بصوت مسموع لترسيخ المسارات العصبية.',
       });
     } finally {
       setIsAiEvaluating(false);
     }
   };
 
-  // Export Board (Shapes + Canvas) to PNG
+  // Export PNG
   const handleExportPNG = async () => {
     if (!containerRef.current) return;
     try {
       const canvas = await html2canvas(containerRef.current, {
-        backgroundColor: background === 'chalkboard' ? '#0b0f19' : '#ffffff',
+        backgroundColor: background === 'chalkboard' ? '#090d16' : '#ffffff',
         scale: 2,
         useCORS: true,
       });
       const url = canvas.toDataURL('image/png');
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${boardTitle.replace(/\s+/g, '_')}_whiteboard.png`;
+      a.download = `${boardTitle.replace(/\s+/g, '_')}_studio.png`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -655,12 +771,12 @@ ${fullNotes}
     }
   };
 
-  // Export to PDF
+  // Export PDF
   const handleExportPDF = async () => {
     if (!containerRef.current) return;
     try {
       const canvas = await html2canvas(containerRef.current, {
-        backgroundColor: background === 'chalkboard' ? '#0b0f19' : '#ffffff',
+        backgroundColor: background === 'chalkboard' ? '#090d16' : '#ffffff',
         scale: 2,
         useCORS: true,
       });
@@ -671,14 +787,14 @@ ${fullNotes}
         format: [canvas.width, canvas.height],
       });
       pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
-      pdf.save(`${boardTitle.replace(/\s+/g, '_')}_whiteboard.pdf`);
+      pdf.save(`${boardTitle.replace(/\s+/g, '_')}_studio.pdf`);
     } catch (e) {
       console.error(e);
-      alert('حدث خطأ أثناء تصدير الـ PDF');
+      alert('حدث خطأ أثناء تصدير ملف الـ PDF');
     }
   };
 
-  // Toggle Fullscreen
+  // Fullscreen Toggle
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       containerRef.current?.requestFullscreen().catch((err) => console.error(err));
@@ -699,68 +815,68 @@ ${fullNotes}
       className={clsx(
         'relative w-screen h-screen flex flex-col overflow-hidden select-none font-sans',
         background === 'chalkboard' && 'bg-[#090d16] text-slate-100',
-        background === 'dots' && 'bg-slate-950 text-slate-100',
-        background === 'grid' && 'bg-slate-900 text-slate-100',
-        background === 'clean' && 'bg-slate-50 text-slate-900'
+        background === 'dots' && 'bg-[#0c1220] text-slate-100',
+        background === 'grid' && 'bg-[#0f172a] text-slate-100',
+        background === 'clean' && 'bg-[#f8fafc] text-slate-900'
       )}
       style={{
         backgroundImage:
           background === 'dots'
             ? 'radial-gradient(circle, rgba(255,255,255,0.12) 1.5px, transparent 1.5px)'
             : background === 'grid'
-            ? 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)'
+            ? 'linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)'
             : undefined,
         backgroundSize: background === 'dots' ? '28px 28px' : background === 'grid' ? '32px 32px' : undefined,
       }}
     >
-      {/* Top Floating Glassmorphism Toolbar */}
-      <header className="absolute top-4 left-4 right-4 z-40 flex items-center justify-between gap-3 pointer-events-none">
-        {/* Left: Back & Title */}
-        <div className="flex items-center gap-2 bg-card/85 backdrop-blur-xl border border-border px-3.5 py-2 rounded-2xl shadow-xl pointer-events-auto">
+      {/* Studio Hairline Header Bar */}
+      <header className="absolute top-3 left-4 right-4 z-40 flex items-center justify-between gap-3 pointer-events-none">
+        {/* Left: Studio Identity & Title */}
+        <div className="flex items-center gap-2 bg-card/90 backdrop-blur-xl border border-border px-3 py-1.5 rounded-xl shadow-sm pointer-events-auto">
           <button
             onClick={() => navigate('/dashboard')}
-            className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground rounded-xl transition-colors"
+            className="p-1 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-colors"
             title="رجوع للوحة التحكم"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5" />
           </button>
 
           <input
             type="text"
             value={boardTitle}
             onChange={(e) => setBoardTitle(e.target.value)}
-            className="text-xs sm:text-sm font-extrabold bg-transparent focus:bg-background border border-transparent hover:border-border focus:border-primary px-2.5 py-1 rounded-xl transition-all w-48 sm:w-72 focus:outline-none"
-            placeholder="عنوان السبورة والشرح..."
+            className="text-xs font-bold bg-transparent border border-transparent hover:border-border focus:border-primary px-2 py-0.5 rounded-lg transition-all w-44 sm:w-64 focus:outline-none text-foreground"
+            placeholder="عنوان الشرح..."
           />
         </div>
 
-        {/* Center: Tools & Pen Selector */}
-        <div className="flex items-center gap-1.5 bg-card/90 backdrop-blur-xl border border-border p-1.5 rounded-2xl shadow-xl pointer-events-auto">
+        {/* Center: Tactile Studio Drawing & Pen Toolbar */}
+        <div className="flex items-center gap-1 bg-card/95 backdrop-blur-xl border border-border p-1 rounded-xl shadow-sm pointer-events-auto">
           {/* Select Mode */}
           <button
             onClick={() => setActiveTool('select')}
             className={clsx(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all',
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
               activeTool === 'select'
-                ? 'bg-primary text-primary-foreground shadow-md'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                ? 'bg-muted text-foreground border border-border/80 shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
             )}
             title="تحريك وتعديل الأشكال (V)"
           >
             <MousePointer className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">تحريك الأشكال</span>
+            <span className="hidden sm:inline">تحريك</span>
           </button>
 
-          <div className="h-4 w-px bg-border mx-0.5" />
+          <div className="h-4 w-px bg-border/80 mx-0.5" />
 
           {/* Pen Tool */}
           <button
             onClick={() => setActiveTool('pen')}
             className={clsx(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all',
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
               activeTool === 'pen'
-                ? 'bg-primary text-primary-foreground shadow-md'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
             )}
             title="قلم الشرح والكتابة الحرة (P)"
           >
@@ -772,10 +888,10 @@ ${fullNotes}
           <button
             onClick={() => setActiveTool('highlighter')}
             className={clsx(
-              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all',
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all',
               activeTool === 'highlighter'
-                ? 'bg-primary text-primary-foreground shadow-md'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
             )}
             title="قلم التظليل والتمييز (H)"
           >
@@ -787,12 +903,12 @@ ${fullNotes}
           <button
             onClick={() => setActiveTool('arrow')}
             className={clsx(
-              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all',
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all',
               activeTool === 'arrow'
-                ? 'bg-primary text-primary-foreground shadow-md'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
             )}
-            title="رسم أسهم للشرح والربط (A)"
+            title="رسم أسهم الربط (A)"
           >
             <ArrowRight className="w-3.5 h-3.5" />
             <span className="hidden md:inline">سهم</span>
@@ -802,10 +918,10 @@ ${fullNotes}
           <button
             onClick={() => setActiveTool('eraser')}
             className={clsx(
-              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all',
+              'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all',
               activeTool === 'eraser'
-                ? 'bg-destructive text-destructive-foreground shadow-md'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                ? 'bg-destructive text-destructive-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
             )}
             title="ممحاة الرسومات (E)"
           >
@@ -813,223 +929,404 @@ ${fullNotes}
             <span className="hidden md:inline">ممحاة</span>
           </button>
 
-          {/* Pen Color Picker */}
+          {/* Pen Controls: Palette & Stroke Size */}
           {activeTool !== 'select' && activeTool !== 'eraser' && (
-            <div className="flex items-center gap-1 pl-1.5 border-l border-border">
-              {COLOR_PALETTE.map((c) => (
+            <div className="flex items-center gap-1.5 pl-1.5 border-l border-border/80">
+              {PEN_PALETTE.map((c) => (
                 <button
                   key={c.value}
                   onClick={() => setPenColor(c.value)}
                   style={{ backgroundColor: c.value }}
                   className={clsx(
-                    'w-5 h-5 rounded-full border transition-transform hover:scale-125',
+                    'w-4 h-4 rounded-full border transition-transform hover:scale-125',
                     penColor === c.value ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110' : 'border-black/20'
                   )}
                   title={c.name}
                 />
               ))}
 
-              {/* Stroke Size */}
+              {/* Stroke Size Dropdown */}
               <select
                 value={strokeWidth}
                 onChange={(e) => setStrokeWidth(Number(e.target.value))}
-                className="text-[11px] bg-background border border-border rounded-lg px-1.5 py-1 ml-1 text-foreground focus:outline-none"
+                className="text-[11px] font-mono bg-muted border border-border rounded-md px-1.5 py-0.5 ml-1 text-foreground focus:outline-none"
               >
-                <option value={2}>رفيع (2px)</option>
-                <option value={4}>متوسط (4px)</option>
-                <option value={8}>عريض (8px)</option>
-                <option value={14}>سميك (14px)</option>
+                <option value={2}>2px</option>
+                <option value={4}>4px</option>
+                <option value={8}>8px</option>
+                <option value={14}>14px</option>
               </select>
             </div>
           )}
 
-          {/* Undo / Redo / Clear for drawing */}
-          <div className="flex items-center gap-0.5 border-l border-border pl-1">
+          {/* Undo / Redo / Clear Drawing */}
+          <div className="flex items-center gap-0.5 border-l border-border/80 pl-1">
             <button
               onClick={handleUndo}
               disabled={strokes.length === 0}
-              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg disabled:opacity-30 transition-colors"
-              title="تراجع عن آخر خط"
+              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md disabled:opacity-25 transition-colors"
+              title="تراجع"
             >
               <Undo2 className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={handleRedo}
               disabled={redoStrokes.length === 0}
-              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg disabled:opacity-30 transition-colors"
-              title="إعادة آخر خط"
+              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md disabled:opacity-25 transition-colors"
+              title="إعادة"
             >
               <Redo2 className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={handleClearDrawing}
               disabled={strokes.length === 0}
-              className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg disabled:opacity-30 transition-colors"
-              title="مسح كل الرسومات بالقلم"
+              className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md disabled:opacity-25 transition-colors"
+              title="مسح الرسومات"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Right Actions: AI Evaluate & Export */}
-        <div className="flex items-center gap-2 bg-card/85 backdrop-blur-xl border border-border p-1.5 rounded-2xl shadow-xl pointer-events-auto">
-          {/* AI Feynman Review Button */}
+        {/* Right Actions: AI Review & Export */}
+        <div className="flex items-center gap-1.5 bg-card/90 backdrop-blur-xl border border-border p-1 rounded-xl shadow-sm pointer-events-auto">
           <button
             onClick={handleEvaluateWithAI}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-90 text-white rounded-xl text-xs font-bold shadow-md hover:scale-[1.02] transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold shadow-xs hover:bg-primary/95 transition-all"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            <span>قيّم شرحي بالذكاء الاصطناعي</span>
+            <span>قيّم الشرح الذاتي</span>
           </button>
 
-          {/* Export PNG */}
           <button
             onClick={handleExportPNG}
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
-            title="تصدير كصورة PNG"
+            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+            title="تصدير صورة PNG"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5" />
           </button>
 
-          {/* Fullscreen */}
           <button
             onClick={toggleFullscreen}
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
+            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
             title="ملء الشاشة"
           >
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
         </div>
       </header>
 
-      {/* Left Floating Shapes & Boxes Toolbar */}
-      <aside className="absolute left-4 top-24 bottom-20 z-30 w-14 hover:w-56 group bg-card/85 backdrop-blur-xl border border-border rounded-3xl shadow-2xl p-2.5 flex flex-col justify-between transition-all duration-300 overflow-hidden">
+      {/* Left Vertical Shape Library (Taste Architecture: 12 Distinct Types) */}
+      <aside className="absolute left-4 top-20 bottom-16 z-30 w-12 hover:w-60 group bg-card/90 backdrop-blur-xl border border-border rounded-2xl shadow-sm p-1.5 flex flex-col justify-between transition-all duration-300 overflow-y-auto overflow-x-hidden">
         <div className="space-y-3">
-          <div className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground px-2 py-1 flex items-center gap-2">
-            <Layers className="w-4 h-4 text-primary shrink-0" />
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity truncate">
-              أشكال ومربعات الشرح
+          <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground px-2 py-1 flex items-center gap-2">
+            <Layers className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity truncate font-bold">
+              مكتبة الأشكال والمربعات
             </span>
           </div>
 
-          <div className="space-y-1.5">
-            {/* Sticky Note */}
+          <div className="space-y-1">
+            {/* 1. Sticky Note */}
             <button
               onClick={() => handleAddShape('sticky')}
-              className="w-full flex items-center gap-2.5 p-2 rounded-2xl hover:bg-muted/80 text-foreground transition-colors text-xs font-bold"
+              className="w-full flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-muted/80 text-foreground transition-colors text-xs font-semibold"
             >
-              <span className="p-1.5 rounded-xl bg-amber-400 text-amber-950 shadow-sm shrink-0">
-                <StickyNote className="w-4 h-4" />
+              <span className="p-1.5 rounded-md bg-amber-400 text-amber-950 shrink-0">
+                <StickyNote className="w-3.5 h-3.5" />
               </span>
               <span className="opacity-0 group-hover:opacity-100 transition-opacity truncate">
                 ملاحظة لاصقة (Sticky)
               </span>
             </button>
 
-            {/* Concept Box */}
+            {/* 2. Concept Box */}
             <button
               onClick={() => handleAddShape('concept-box')}
-              className="w-full flex items-center gap-2.5 p-2 rounded-2xl hover:bg-muted/80 text-foreground transition-colors text-xs font-bold"
+              className="w-full flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-muted/80 text-foreground transition-colors text-xs font-semibold"
             >
-              <span className="p-1.5 rounded-xl bg-indigo-500 text-white shadow-sm shrink-0">
-                <Square className="w-4 h-4" />
+              <span className="p-1.5 rounded-md bg-blue-600 text-white shrink-0">
+                <Square className="w-3.5 h-3.5" />
               </span>
               <span className="opacity-0 group-hover:opacity-100 transition-opacity truncate">
                 صندوق مفهوم رئيسي
               </span>
             </button>
 
-            {/* Q&A Challenge Card */}
+            {/* 3. QA Challenge Card */}
             <button
               onClick={() => handleAddShape('qa-card')}
-              className="w-full flex items-center gap-2.5 p-2 rounded-2xl hover:bg-muted/80 text-foreground transition-colors text-xs font-bold"
+              className="w-full flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-muted/80 text-foreground transition-colors text-xs font-semibold"
             >
-              <span className="p-1.5 rounded-xl bg-emerald-500 text-white shadow-sm shrink-0">
-                <HelpCircle className="w-4 h-4" />
+              <span className="p-1.5 rounded-md bg-emerald-600 text-white shrink-0">
+                <HelpCircle className="w-3.5 h-3.5" />
               </span>
               <span className="opacity-0 group-hover:opacity-100 transition-opacity truncate">
                 بطاقة سؤال وتفسير
               </span>
             </button>
 
-            {/* Callout Bubble */}
-            <button
-              onClick={() => handleAddShape('callout')}
-              className="w-full flex items-center gap-2.5 p-2 rounded-2xl hover:bg-muted/80 text-foreground transition-colors text-xs font-bold"
-            >
-              <span className="p-1.5 rounded-xl bg-purple-500 text-white shadow-sm shrink-0">
-                <MessageSquare className="w-4 h-4" />
-              </span>
-              <span className="opacity-0 group-hover:opacity-100 transition-opacity truncate">
-                فقاعة كلام وملاحظة
-              </span>
-            </button>
-
-            {/* Circle */}
+            {/* 4. Circle */}
             <button
               onClick={() => handleAddShape('circle')}
-              className="w-full flex items-center gap-2.5 p-2 rounded-2xl hover:bg-muted/80 text-foreground transition-colors text-xs font-bold"
+              className="w-full flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-muted/80 text-foreground transition-colors text-xs font-semibold"
             >
-              <span className="p-1.5 rounded-xl bg-sky-500 text-white shadow-sm shrink-0">
-                <Circle className="w-4 h-4" />
+              <span className="p-1.5 rounded-md bg-sky-600 text-white shrink-0">
+                <Circle className="w-3.5 h-3.5" />
               </span>
               <span className="opacity-0 group-hover:opacity-100 transition-opacity truncate">
                 دائرة محورية
               </span>
             </button>
 
-            {/* Diamond */}
+            {/* 5. Diamond */}
             <button
               onClick={() => handleAddShape('diamond')}
-              className="w-full flex items-center gap-2.5 p-2 rounded-2xl hover:bg-muted/80 text-foreground transition-colors text-xs font-bold"
+              className="w-full flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-muted/80 text-foreground transition-colors text-xs font-semibold"
             >
-              <span className="p-1.5 rounded-xl bg-amber-500 text-white shadow-sm shrink-0 rotate-45">
-                <Square className="w-3.5 h-3.5" />
+              <span className="p-1.5 rounded-md bg-amber-600 text-white shrink-0 rotate-45">
+                <Square className="w-3 h-3" />
               </span>
               <span className="opacity-0 group-hover:opacity-100 transition-opacity truncate">
                 معين قرار / تساؤل
               </span>
             </button>
 
-            {/* Big Heading */}
+            {/* 6. Callout Bubble */}
             <button
-              onClick={() => handleAddShape('heading')}
-              className="w-full flex items-center gap-2.5 p-2 rounded-2xl hover:bg-muted/80 text-foreground transition-colors text-xs font-bold"
+              onClick={() => handleAddShape('callout')}
+              className="w-full flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-muted/80 text-foreground transition-colors text-xs font-semibold"
             >
-              <span className="p-1.5 rounded-xl bg-pink-500 text-white shadow-sm shrink-0">
-                <FileText className="w-4 h-4" />
+              <span className="p-1.5 rounded-md bg-purple-600 text-white shrink-0">
+                <MessageSquare className="w-3.5 h-3.5" />
               </span>
               <span className="opacity-0 group-hover:opacity-100 transition-opacity truncate">
-                نص حر / عنوان كبير
+                فقاعة شرح وتنبيه
+              </span>
+            </button>
+
+            {/* 7. Hexagon Module */}
+            <button
+              onClick={() => handleAddShape('hex')}
+              className="w-full flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-muted/80 text-foreground transition-colors text-xs font-semibold"
+            >
+              <span className="p-1.5 rounded-md bg-slate-700 text-white shrink-0">
+                <Hexagon className="w-3.5 h-3.5" />
+              </span>
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity truncate">
+                وحدة بنائية (Hex)
+              </span>
+            </button>
+
+            {/* 8. Math / Code Formula */}
+            <button
+              onClick={() => handleAddShape('formula')}
+              className="w-full flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-muted/80 text-foreground transition-colors text-xs font-semibold"
+            >
+              <span className="p-1.5 rounded-md bg-orange-600 text-white shrink-0">
+                <Binary className="w-3.5 h-3.5" />
+              </span>
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity truncate">
+                صيغة / قانون رياضي
+              </span>
+            </button>
+
+            {/* 9. Step Card */}
+            <button
+              onClick={() => handleAddShape('step-card')}
+              className="w-full flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-muted/80 text-foreground transition-colors text-xs font-semibold"
+            >
+              <span className="p-1.5 rounded-md bg-teal-600 text-white shrink-0">
+                <ListOrdered className="w-3.5 h-3.5" />
+              </span>
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity truncate">
+                خطوة تسلسلية
+              </span>
+            </button>
+
+            {/* 10. Table Comparison */}
+            <button
+              onClick={() => handleAddShape('table')}
+              className="w-full flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-muted/80 text-foreground transition-colors text-xs font-semibold"
+            >
+              <span className="p-1.5 rounded-md bg-indigo-600 text-white shrink-0">
+                <Grid className="w-3.5 h-3.5" />
+              </span>
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity truncate">
+                جدول مقارنة (A vs B)
+              </span>
+            </button>
+
+            {/* 11. Large Heading */}
+            <button
+              onClick={() => handleAddShape('heading')}
+              className="w-full flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-muted/80 text-foreground transition-colors text-xs font-semibold"
+            >
+              <span className="p-1.5 rounded-md bg-rose-600 text-white shrink-0">
+                <FileText className="w-3.5 h-3.5" />
+              </span>
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity truncate">
+                عنوان كبير مستقل
+              </span>
+            </button>
+
+            {/* 12. Standard Block */}
+            <button
+              onClick={() => handleAddShape('rectangle')}
+              className="w-full flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-muted/80 text-foreground transition-colors text-xs font-semibold"
+            >
+              <span className="p-1.5 rounded-md bg-zinc-600 text-white shrink-0">
+                <Square className="w-3.5 h-3.5" />
+              </span>
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity truncate">
+                مستطيل توضيح
               </span>
             </button>
           </div>
         </div>
 
-        {/* Selected Shape Quick Controls (Color, Duplicate, Delete) */}
-        {selectedShape && (
-          <div className="pt-2 border-t border-border space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase px-2">
-              تعديل الشكل المحدد
+        {/* Global Pen Typography Selector */}
+        <div className="pt-2 border-t border-border/80 space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="text-[9px] font-mono uppercase text-muted-foreground block px-1">
+            خط الكتابة المفضل
+          </span>
+          <select
+            value={penFontFamily}
+            onChange={(e) => setPenFontFamily(e.target.value as PenFontFamily)}
+            className="w-full text-[10px] bg-muted border border-border rounded-md px-1.5 py-1 text-foreground focus:outline-none"
+          >
+            {PEN_FONTS.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </aside>
+
+      {/* Right Floating Shape Inspector (Controls Size, Font, Colors) */}
+      {selectedShape && (
+        <aside className="absolute right-4 top-20 z-30 w-72 bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-xl p-4 space-y-4 animate-in fade-in slide-in-from-right-4 duration-150">
+          <div className="flex items-center justify-between border-b border-border/80 pb-2">
+            <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider font-semibold">
+              خصائص الشكل المحدد
             </span>
-            <div className="flex items-center gap-1 justify-center">
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => handleDuplicateShape(selectedShape.id)}
-                className="px-2.5 py-1 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-lg text-[10px] font-semibold"
+                className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                title="تكرار الشكل"
               >
-                تكرار
+                <Copy className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => handleDeleteShape(selectedShape.id)}
-                className="px-2.5 py-1 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-lg text-[10px] font-semibold"
+                className="p-1 text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                title="حذف الشكل"
               >
-                حذف
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
-        )}
-      </aside>
+
+          {/* Size Controls (Width x Height) */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span className="flex items-center gap-1 font-mono text-[11px]">
+                <Scaling className="w-3.5 h-3.5 text-primary" /> الأبعاد (العرض × الارتفاع)
+              </span>
+              <span className="font-mono text-[10px]">{selectedShape.width} × {selectedShape.height}px</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[10px] text-muted-foreground block mb-0.5 font-mono">العرض</label>
+                <input
+                  type="range"
+                  min={180}
+                  max={600}
+                  step={10}
+                  value={selectedShape.width}
+                  onChange={(e) => handleUpdateShape(selectedShape.id, { width: Number(e.target.value) })}
+                  className="w-full accent-primary"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground block mb-0.5 font-mono">الارتفاع</label>
+                <input
+                  type="range"
+                  min={100}
+                  max={500}
+                  step={10}
+                  value={selectedShape.height}
+                  onChange={(e) => handleUpdateShape(selectedShape.id, { height: Number(e.target.value) })}
+                  className="w-full accent-primary"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Typography Controls (Font Family & Font Size) */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span className="flex items-center gap-1 font-mono text-[11px]">
+                <Type className="w-3.5 h-3.5 text-primary" /> الخط وحجم النص
+              </span>
+              <span className="font-mono text-[10px]">{selectedShape.fontSize || 14}px</span>
+            </div>
+            <div className="space-y-1.5">
+              <select
+                value={selectedShape.fontFamily || 'arabic'}
+                onChange={(e) => handleUpdateShape(selectedShape.id, { fontFamily: e.target.value as PenFontFamily })}
+                className="w-full text-xs bg-muted border border-border rounded-lg px-2 py-1 text-foreground focus:outline-none"
+              >
+                {PEN_FONTS.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="range"
+                  min={11}
+                  max={28}
+                  step={1}
+                  value={selectedShape.fontSize || 14}
+                  onChange={(e) => handleUpdateShape(selectedShape.id, { fontSize: Number(e.target.value) })}
+                  className="w-full accent-primary"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Presets Theme Palette */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider block">
+              سمات الألوان
+            </span>
+            <div className="grid grid-cols-4 gap-1.5">
+              {SHAPE_PALETTE.map((pal) => (
+                <button
+                  key={pal.name}
+                  onClick={() =>
+                    handleUpdateShape(selectedShape.id, {
+                      color: pal.bg,
+                      borderColor: pal.border,
+                      textColor: pal.text,
+                    })
+                  }
+                  style={{ backgroundColor: pal.bg, borderColor: pal.border, color: pal.text }}
+                  className="h-7 rounded-lg border text-[10px] font-bold flex items-center justify-center hover:scale-105 transition-transform"
+                  title={pal.name}
+                >
+                  Aa
+                </button>
+              ))}
+            </div>
+          </div>
+        </aside>
+      )}
 
       {/* Main Canvas Workspace Area */}
       <div className="relative flex-1 w-full h-full">
@@ -1037,6 +1334,9 @@ ${fullNotes}
         <div className="absolute inset-0 pointer-events-auto">
           {shapes.map((shape) => {
             const isSelected = selectedShapeId === shape.id;
+            const fontCss =
+              PEN_FONTS.find((f) => f.id === (shape.fontFamily || 'arabic'))?.css ||
+              "'IBM Plex Sans Arabic', sans-serif";
 
             return (
               <div
@@ -1049,16 +1349,21 @@ ${fullNotes}
                   backgroundColor: shape.color,
                   borderColor: shape.borderColor || 'transparent',
                   color: shape.textColor || '#ffffff',
+                  fontFamily: fontCss,
                 }}
                 className={clsx(
-                  'absolute rounded-2xl p-4 shadow-xl border-2 transition-shadow select-none group',
+                  'absolute rounded-xl p-4 shadow-md border transition-shadow select-none group',
                   isSelected && activeTool === 'select'
-                    ? 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-2xl scale-[1.01]'
-                    : 'hover:shadow-2xl',
+                    ? 'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg'
+                    : 'hover:shadow-lg',
                   shape.type === 'sticky' &&
-                    'rotate-[-1deg] hover:rotate-0 rounded-none shadow-md font-sans border-t-[8px]',
-                  shape.type === 'circle' && 'rounded-full text-center flex flex-col justify-center items-center',
-                  shape.type === 'diamond' && 'rounded-3xl rotate-0 border-dashed',
+                    'rotate-[-0.8deg] hover:rotate-0 rounded-none shadow-sm border-t-[6px]',
+                  shape.type === 'circle' &&
+                    'rounded-full text-center flex flex-col justify-center items-center',
+                  shape.type === 'diamond' && 'rounded-2xl border-dashed',
+                  shape.type === 'hex' && 'rounded-3xl border-2',
+                  shape.type === 'formula' && 'font-mono border-dashed bg-slate-950/80',
+                  shape.type === 'heading' && 'border-none shadow-none',
                   activeTool === 'select' ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
                 )}
               >
@@ -1070,6 +1375,7 @@ ${fullNotes}
                       value={shape.title || ''}
                       onChange={(e) => handleUpdateShape(shape.id, { title: e.target.value })}
                       placeholder="عنوان المفهوم..."
+                      style={{ fontFamily: fontCss }}
                       className="font-bold text-xs bg-transparent focus:bg-black/20 rounded px-1.5 py-0.5 w-full focus:outline-none placeholder:text-white/40"
                     />
                   )}
@@ -1090,14 +1396,17 @@ ${fullNotes}
                   )}
                 </div>
 
-                {/* Content Editor */}
+                {/* Content Editor with Dynamic Font & Size */}
                 <textarea
                   rows={shape.type === 'sticky' ? 4 : 5}
                   value={shape.content}
                   onChange={(e) => handleUpdateShape(shape.id, { content: e.target.value })}
                   placeholder="اكتب شرحك وتفسيرك هنا..."
-                  style={{ fontSize: shape.fontSize ? `${shape.fontSize}px` : undefined }}
-                  className="w-full bg-transparent resize-none focus:outline-none text-xs leading-relaxed placeholder:text-white/40 font-medium"
+                  style={{
+                    fontSize: shape.fontSize ? `${shape.fontSize}px` : '13px',
+                    fontFamily: fontCss,
+                  }}
+                  className="w-full bg-transparent resize-none focus:outline-none leading-relaxed placeholder:text-white/40 font-medium"
                 />
 
                 {/* Q&A Answer Toggle */}
@@ -1123,7 +1432,8 @@ ${fullNotes}
                         value={shape.answer || ''}
                         onChange={(e) => handleUpdateShape(shape.id, { answer: e.target.value })}
                         placeholder="اكتب الإجابة والتفسير..."
-                        className="w-full bg-emerald-950/40 p-2 rounded-xl text-[11px] text-emerald-100 focus:outline-none resize-none leading-relaxed"
+                        style={{ fontFamily: fontCss }}
+                        className="w-full bg-emerald-950/40 p-2 rounded-lg text-[11px] text-emerald-100 focus:outline-none resize-none leading-relaxed"
                       />
                     ) : (
                       <div
@@ -1131,12 +1441,21 @@ ${fullNotes}
                           e.stopPropagation();
                           handleUpdateShape(shape.id, { isAnswerRevealed: true });
                         }}
-                        className="p-2.5 bg-emerald-950/40 border border-dashed border-emerald-400/40 rounded-xl text-center text-[10px] text-emerald-300 cursor-pointer hover:bg-emerald-950/60"
+                        className="p-2 bg-emerald-950/40 border border-dashed border-emerald-400/40 rounded-lg text-center text-[10px] text-emerald-300 cursor-pointer hover:bg-emerald-950/60"
                       >
-                        اضغط هنا لكشف التفسير والتأكد من فهمك!
+                        اضغط لكشف التفسير والتأكد من فهمك!
                       </div>
                     )}
                   </div>
+                )}
+
+                {/* Direct Resize Handle (Bottom-Right) */}
+                {isSelected && activeTool === 'select' && (
+                  <div
+                    onPointerDown={(e) => handleResizePointerDown(e, shape.id)}
+                    className="absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-primary border-2 border-background rounded-full cursor-nwse-resize hover:scale-125 transition-transform"
+                    title="سحب لتغيير حجم الشكل"
+                  />
                 )}
               </div>
             );
@@ -1154,122 +1473,94 @@ ${fullNotes}
             'absolute inset-0 w-full h-full',
             activeTool === 'select'
               ? 'pointer-events-none'
-              : activeTool === 'eraser'
-              ? 'pointer-events-auto cursor-crosshair'
               : 'pointer-events-auto cursor-crosshair'
           )}
         />
       </div>
 
-      {/* Bottom Floating Bar: Background, Tips, Stats */}
-      <footer className="absolute bottom-4 left-4 right-4 z-40 flex items-center justify-between gap-3 pointer-events-none">
-        {/* Feynman Tip Pill */}
-        <div className="flex items-center gap-2 bg-card/85 backdrop-blur-xl border border-border px-3.5 py-2 rounded-2xl shadow-xl pointer-events-auto text-xs text-muted-foreground">
-          <Lightbulb className="w-4 h-4 text-amber-400 shrink-0" />
+      {/* Bottom Floating Bar: Background Selector & Tips */}
+      <footer className="absolute bottom-3 left-4 right-4 z-40 flex items-center justify-between gap-3 pointer-events-none">
+        {/* Feynman Studio Tip */}
+        <div className="flex items-center gap-2 bg-card/90 backdrop-blur-xl border border-border px-3 py-1.5 rounded-xl shadow-sm pointer-events-auto text-xs text-muted-foreground">
+          <Lightbulb className="w-3.5 h-3.5 text-amber-500 shrink-0" />
           <span className="hidden sm:inline">
             <strong>نصيحة فاينمان:</strong> إذا عجزت عن شرح الفكرة ببساطة، ارسم شكل وحدد النقطة التي تحتاج مراجعة!
           </span>
-          <span className="sm:hidden font-medium">قلم وأشكال للشرح الذاتي</span>
+          <span className="sm:hidden font-medium">استوديو الشرح الذاتي بالقلم</span>
         </div>
 
-        {/* Board Background Selector */}
-        <div className="flex items-center gap-1 bg-card/85 backdrop-blur-xl border border-border p-1.5 rounded-2xl shadow-xl pointer-events-auto">
-          <span className="text-[10px] font-bold text-muted-foreground px-2">السبورة:</span>
-          <button
-            onClick={() => setBackground('chalkboard')}
-            className={clsx(
-              'px-2.5 py-1 rounded-xl text-xs font-semibold transition-all',
-              background === 'chalkboard'
-                ? 'bg-primary text-primary-foreground shadow'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            داكنة
-          </button>
-          <button
-            onClick={() => setBackground('dots')}
-            className={clsx(
-              'px-2.5 py-1 rounded-xl text-xs font-semibold transition-all',
-              background === 'dots'
-                ? 'bg-primary text-primary-foreground shadow'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            نقطية
-          </button>
-          <button
-            onClick={() => setBackground('grid')}
-            className={clsx(
-              'px-2.5 py-1 rounded-xl text-xs font-semibold transition-all',
-              background === 'grid'
-                ? 'bg-primary text-primary-foreground shadow'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            شبكية
-          </button>
-          <button
-            onClick={() => setBackground('clean')}
-            className={clsx(
-              'px-2.5 py-1 rounded-xl text-xs font-semibold transition-all',
-              background === 'clean'
-                ? 'bg-primary text-primary-foreground shadow'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            بيضاء
-          </button>
+        {/* Studio Background Selector */}
+        <div className="flex items-center gap-1 bg-card/90 backdrop-blur-xl border border-border p-1 rounded-xl shadow-sm pointer-events-auto">
+          <span className="text-[10px] font-mono text-muted-foreground px-1.5 font-semibold">السبورة:</span>
+          {(['chalkboard', 'dots', 'grid', 'clean'] as BoardBackground[]).map((bg) => (
+            <button
+              key={bg}
+              onClick={() => setBackground(bg)}
+              className={clsx(
+                'px-2 py-0.5 rounded-lg text-xs font-semibold transition-all',
+                background === bg
+                  ? 'bg-muted text-foreground border border-border/80 shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {bg === 'chalkboard' ? 'داكنة' : bg === 'dots' ? 'نقطية' : bg === 'grid' ? 'شبكية' : 'بيضاء'}
+            </button>
+          ))}
         </div>
       </footer>
 
       {/* AI Feynman Review Modal */}
       {isAiReviewOpen && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-xl bg-card border border-border rounded-3xl shadow-2xl p-6 space-y-5 animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-2.5">
-                <span className="p-2 bg-gradient-to-tr from-indigo-500 to-purple-600 text-white rounded-2xl shadow-lg">
-                  <Sparkles className="w-5 h-5 text-amber-300" />
+          <div className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-xl p-6 space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-border/80">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                  <Sparkles className="w-4 h-4 text-amber-300" />
                 </span>
                 <div>
-                  <h3 className="text-base font-bold text-foreground">تقييم الشرح بأسلوب فاينمان</h3>
-                  <p className="text-xs text-muted-foreground">تحليل ما كتبته ورسمته على السبورة</p>
+                  <h3 className="text-sm font-bold text-foreground">تقييم الشرح بأسلوب فاينمان</h3>
+                  <p className="text-[11px] text-muted-foreground">تحليل ما دونته ورسمته على السبورة</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsAiReviewOpen(false)}
-                className="p-1 hover:bg-muted text-muted-foreground rounded-lg"
+                className="p-1 hover:bg-muted text-muted-foreground rounded-lg transition-colors"
               >
                 ✕
               </button>
             </div>
 
             {isAiEvaluating ? (
-              <div className="py-12 flex flex-col items-center justify-center space-y-3 text-center">
-                <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs font-medium text-muted-foreground">
-                  جاري قراءة الملاحظات والمفاهيم وتحليل وضوح تفسيرك...
+              <div className="py-10 flex flex-col items-center justify-center space-y-3 text-center">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs text-muted-foreground">
+                  جاري تحليل وضوح الأفكار ومقارنتها بنموذج الفهم الجوهري...
                 </p>
               </div>
             ) : aiReviewResult ? (
-              <div className="space-y-4">
+              <div className="space-y-3 text-xs">
                 {/* Score */}
-                <div className="flex items-center justify-between p-4 bg-muted/40 rounded-2xl">
+                <div className="flex items-center justify-between p-3 bg-muted/40 border border-border rounded-xl">
                   <div>
-                    <span className="text-xs font-bold text-muted-foreground block">درجة وضوح الشرح</span>
-                    <h4 className="text-sm font-semibold text-foreground mt-0.5">
+                    <span className="text-[10px] font-mono text-muted-foreground uppercase block">
+                      درجة وضوح التفسير
+                    </span>
+                    <h4 className="text-xs font-bold text-foreground mt-0.5">
                       {aiReviewResult.clarityVerdict}
                     </h4>
                   </div>
-                  <span className="text-3xl font-black text-emerald-500">{aiReviewResult.score}%</span>
+                  <span className="text-2xl font-mono font-bold text-primary">
+                    {aiReviewResult.score}%
+                  </span>
                 </div>
 
                 {/* Strengths */}
-                <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-xs space-y-1.5">
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl space-y-1">
                   <span className="font-bold text-emerald-600 dark:text-emerald-400 block">
-                    ✨ نقاط القوة في تفسيرك:
+                    نقاط القوة في تفسيرك:
                   </span>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
                     {aiReviewResult.strengths?.map((s: string, idx: number) => (
                       <li key={idx}>{s}</li>
                     ))}
@@ -1277,21 +1568,21 @@ ${fullNotes}
                 </div>
 
                 {/* Improvements */}
-                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs space-y-1.5">
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-1">
                   <span className="font-bold text-amber-600 dark:text-amber-400 block">
-                    🔍 ثغرات وتساؤلات للمراجعة:
+                    ثغرات ومفاهيم تحتاج توضيحاً:
                   </span>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                  <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
                     {aiReviewResult.improvements?.map((imp: string, idx: number) => (
                       <li key={idx}>{imp}</li>
                     ))}
                   </ul>
                 </div>
 
-                {/* Feynman Golden Advice */}
+                {/* Advice */}
                 {aiReviewResult.feynmanAdvice && (
-                  <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-xs">
-                    <span className="font-bold text-indigo-500 block mb-1">💡 نصيحة فاينمان:</span>
+                  <div className="p-3 bg-primary/10 border border-primary/20 rounded-xl">
+                    <span className="font-bold text-primary block mb-0.5">نصيحة فاينمان:</span>
                     <p className="text-muted-foreground leading-relaxed">{aiReviewResult.feynmanAdvice}</p>
                   </div>
                 )}
@@ -1301,9 +1592,9 @@ ${fullNotes}
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setIsAiReviewOpen(false)}
-                className="px-5 py-2 bg-primary text-primary-foreground rounded-xl text-xs font-bold shadow hover:bg-primary/90"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-xs font-semibold shadow-xs hover:bg-primary/95 transition-all"
               >
-                حسناً، سأواصل التفسير
+                متابعة التفسير
               </button>
             </div>
           </div>
@@ -1312,4 +1603,5 @@ ${fullNotes}
     </div>
   );
 };
+
 export default WhiteboardStudio;

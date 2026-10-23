@@ -276,6 +276,36 @@ Return JSON array:
   }
 
   /**
+   * Generic prompt text execution helper (returns raw string)
+   */
+  async generateText(prompt: string): Promise<string> {
+    if (!this.userApiKey) {
+      throw new Error('AI API key is not configured.');
+    }
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.userApiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const errorJson = await res.json().catch(() => ({}));
+      throw new Error(errorJson?.error?.message || `API error (${res.status})`);
+    }
+
+    const json = await res.json();
+    const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('No content returned from AI provider.');
+    return text;
+  }
+
+  /**
    * Offline text parser for indented markdown/bullet lists
    */
   private extractStructuredTextFallback(text: string): GeneratedMapStructure | null {

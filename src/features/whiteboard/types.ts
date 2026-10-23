@@ -8,7 +8,11 @@ export type ShapeType =
   | 'circle'
   | 'diamond'
   | 'callout'
-  | 'heading';
+  | 'heading'
+  | 'hex'
+  | 'formula'
+  | 'step-card'
+  | 'table';
 
 export interface StrokePoint {
   x: number;
@@ -23,6 +27,8 @@ export interface DrawingStroke {
   tool: 'pen' | 'highlighter' | 'arrow';
 }
 
+export type PenFontFamily = 'handwritten' | 'sans' | 'mono' | 'arabic';
+
 export interface BoardShape {
   id: string;
   type: ShapeType;
@@ -36,6 +42,9 @@ export interface BoardShape {
   borderColor?: string;
   textColor?: string;
   fontSize?: number;
+  fontFamily?: PenFontFamily;
+  borderStyle?: 'solid' | 'dashed' | 'dotted';
+  opacity?: number;
   answer?: string;
   isAnswerRevealed?: boolean;
 }
